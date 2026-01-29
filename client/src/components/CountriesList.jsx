@@ -12,7 +12,7 @@ const EU_COUNTRIES = {
   'SI': 'Slovenia', 'ES': 'Spain', 'SE': 'Sweden'
 };
 
-export default function CountriesList() {
+export default function CountriesList({ embedded = false }) {
   const [countries, setCountries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

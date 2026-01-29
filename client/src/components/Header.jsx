@@ -13,9 +13,7 @@ export default function Header() {
           </Link>
           <nav className="nav">
             <Link to="/" className="nav-link">Votes</Link>
-            <Link to="/meps" className="nav-link">MEPs</Link>
-            <Link to="/groups" className="nav-link">Groups</Link>
-            <Link to="/countries" className="nav-link">Countries</Link>
+            <Link to="/parliament" className="nav-link">Parliament</Link>
             <Link to="/stats" className="nav-link">Statistics</Link>
             <Link to="/compass" className="nav-link">Compass</Link>
             <Link to="/vaa" className="nav-link nav-highlight">Find Your Match</Link>

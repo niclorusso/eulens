@@ -20,9 +20,10 @@ export default function Footer() {
             <div className="footer-section">
               <h4>Explore</h4>
               <Link to="/">Votes</Link>
-              <Link to="/meps">MEPs</Link>
-              <Link to="/groups">Groups</Link>
-              <Link to="/countries">Countries</Link>
+              <Link to="/parliament">Parliament</Link>
+              <Link to="/parliament?tab=meps">MEPs</Link>
+              <Link to="/parliament?tab=groups">Groups</Link>
+              <Link to="/parliament?tab=countries">Countries</Link>
             </div>
 
             <div className="footer-section">

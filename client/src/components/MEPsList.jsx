@@ -25,7 +25,7 @@ const EU_COUNTRIES = {
   'SI': 'Slovenia', 'ES': 'Spain', 'SE': 'Sweden'
 };
 
-export default function MEPsList() {
+export default function MEPsList({ embedded = false }) {
   const [meps, setMeps] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);

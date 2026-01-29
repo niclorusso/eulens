@@ -47,7 +47,7 @@ function getShortName(name) {
   return name.substring(0, 30);
 }
 
-export default function GroupsList() {
+export default function GroupsList({ embedded = false }) {
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

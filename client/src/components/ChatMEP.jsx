@@ -124,17 +124,22 @@ export default function ChatMEP() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
+  const shouldScrollRef = useRef(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
-    scrollToBottom();
+    if (shouldScrollRef.current) {
+      scrollToBottom();
+      shouldScrollRef.current = false;
+    }
   }, [messages]);
 
   const selectMEP = (mep) => {
     setSelectedMEP(mep);
+    shouldScrollRef.current = false; // Don't scroll when selecting MEP
     setMessages([{
       role: 'assistant',
       content: `Hello! I'm ${mep.name}, a member of ${mep.fullGroup} from ${mep.country}. ${mep.description}. Feel free to ask me about European Parliament votes, my political positions, or any EU policy topic!`
@@ -146,6 +151,7 @@ export default function ChatMEP() {
 
     const userMessage = input.trim();
     setInput('');
+    shouldScrollRef.current = true; // Scroll when user sends message
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setLoading(true);
 
@@ -156,9 +162,11 @@ export default function ChatMEP() {
         history: messages.slice(-10) // Last 10 messages for context
       });
 
+      shouldScrollRef.current = true; // Scroll when receiving response
       setMessages(prev => [...prev, { role: 'assistant', content: response.data.response }]);
     } catch (error) {
       console.error('Chat error:', error);
+      shouldScrollRef.current = true;
       setMessages(prev => [...prev, { 
         role: 'assistant', 
         content: 'I apologize, but I\'m having trouble responding right now. Please try again.' 

@@ -16,7 +16,7 @@
 /* Layout */
 .chat-layout {
   display: grid;
-  grid-template-columns: 240px 1fr;
+  grid-template-columns: 280px 1fr;
   gap: 1rem;
   height: calc(100vh - 280px);
   max-height: 600px;
@@ -87,23 +87,32 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  flex: 1;
+  overflow: hidden;
 }
 
 .mep-name {
   font-weight: 600;
   color: #1e293b;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .mep-group {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 500;
   color: var(--mep-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .mep-country {
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   color: #94a3b8;
+  white-space: nowrap;
 }
 
 .chat-disclaimer {

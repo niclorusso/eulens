@@ -24,8 +24,6 @@ const GROUP_SHORT_NAMES = {
   'European Conservatives and Reformists Group': 'ECR',
   'Patriots for Europe Group': 'PfE',
   'Europe of Sovereign Nations Group': 'ESN',
-  'Identity and Democracy': 'ID',
-  'Identity and Democracy Group': 'ID',
   'Non-attached Members': 'NI'
 };
 

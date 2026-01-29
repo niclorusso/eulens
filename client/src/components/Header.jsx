@@ -16,8 +16,8 @@ export default function Header() {
             <Link to="/parliament" className="nav-link">Parliament</Link>
             <Link to="/stats" className="nav-link">Statistics</Link>
             <Link to="/compass" className="nav-link">Compass</Link>
-            <Link to="/vaa" className="nav-link nav-highlight">Find Your Match</Link>
             <Link to="/chat" className="nav-link">Chat with MEP</Link>
+            <Link to="/vaa" className="nav-link nav-highlight">Find Your Match</Link>
             <Link to="/about" className="nav-link">About</Link>
           </nav>
         </div>

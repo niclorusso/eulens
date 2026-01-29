@@ -118,9 +118,9 @@ export function initScheduler(options = {}) {
   console.log('[Scheduler] Next update will run at the scheduled time');
 
   // Schedule the job
-  cron.schedule(schedule, () => {
+  cron.schedule(schedule, async () => {
     console.log(`[Scheduler] Triggered at ${new Date().toISOString()}`);
-    runUpdateScript();
+    await runUpdateScript();
   });
 
   // Optionally run on startup

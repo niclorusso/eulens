@@ -20,6 +20,68 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL || 'postgres://localhost/eulens'
 });
 
+// Simple PCA computation function (same algorithm as frontend)
+function computePCComponents(data, numComponents = 2) {
+  const n = data.length;
+  if (n === 0) return { components: null, means: null };
+  
+  const m = data[0].length;
+  
+  // Center the data (subtract mean from each column)
+  const means = new Array(m).fill(0);
+  for (let j = 0; j < m; j++) {
+    for (let i = 0; i < n; i++) {
+      means[j] += data[i][j];
+    }
+    means[j] /= n;
+  }
+  
+  const centered = data.map(row => row.map((val, j) => val - means[j]));
+  
+  const components = [];
+  let currentData = centered.map(row => [...row]);
+  
+  for (let comp = 0; comp < numComponents; comp++) {
+    // Power iteration
+    let pc = new Array(m).fill(1);
+    let norm = Math.sqrt(pc.reduce((sum, v) => sum + v * v, 0));
+    pc = pc.map(v => v / norm);
+    
+    for (let iter = 0; iter < 100; iter++) {
+      const xpc = currentData.map(row => row.reduce((sum, v, j) => sum + v * pc[j], 0));
+      const newPc = new Array(m).fill(0);
+      for (let j = 0; j < m; j++) {
+        for (let i = 0; i < n; i++) {
+          newPc[j] += currentData[i][j] * xpc[i];
+        }
+      }
+      
+      norm = Math.sqrt(newPc.reduce((sum, v) => sum + v * v, 0));
+      if (norm < 1e-10) break;
+      pc = newPc.map(v => v / norm);
+    }
+    
+    // Enforce sign convention
+    const sum = pc.reduce((a, b) => a + b, 0);
+    if (sum > 0) {
+      pc = pc.map(v => -v);
+    }
+    
+    components.push(pc);
+    
+    // Deflate
+    const projections = currentData.map(row => row.reduce((sum, v, j) => sum + v * pc[j], 0));
+    for (let i = 0; i < n; i++) {
+      const proj = projections[i];
+      for (let j = 0; j < m; j++) {
+        currentData[i][j] -= proj * pc[j];
+      }
+    }
+  }
+  
+  return { components, means };
+}
+
 app.use(cors());
 app.use(bodyParser.json());
 
@@ -1376,12 +1438,106 @@ app.post('/api/vaa/submit', async (req, res) => {
       .map(([group, data]) => ({ group, match_percent: Math.round(data.total / data.count), mep_count: data.count }))
       .sort((a, b) => b.match_percent - a.match_percent);
 
+    // Calculate user's PCA position
+    let userPCA = null;
+    try {
+      // Get the same bill set used for MEP PCA (bills with at least 50 votes)
+      const billListRes = await pool.query(`
+        SELECT DISTINCT bill_id
+        FROM votes
+        WHERE vote IN ('yes', 'no', 'abstain')
+        GROUP BY bill_id
+        HAVING COUNT(*) >= 50
+        ORDER BY bill_id
+      `);
+      
+      const allBillIds = billListRes.rows.map(r => parseInt(r.bill_id));
+      
+      if (allBillIds.length > 0) {
+        // Get MEP vectors for PCA computation (same query as /api/stats/mep-voting-vectors)
+        const mepVectorsRes = await pool.query(`
+          WITH bill_list AS (
+            SELECT DISTINCT bill_id
+            FROM votes
+            WHERE vote IN ('yes', 'no', 'abstain')
+            GROUP BY bill_id
+            HAVING COUNT(*) >= 50
+          ),
+          mep_vote_counts AS (
+            SELECT mep_id, COUNT(*) as vote_count
+            FROM votes v
+            JOIN bill_list bl ON v.bill_id = bl.bill_id
+            WHERE vote IN ('yes', 'no', 'abstain') AND mep_id IS NOT NULL
+            GROUP BY mep_id
+            HAVING COUNT(*) >= 20
+          ),
+          mep_votes_encoded AS (
+            SELECT 
+              v.mep_id,
+              v.bill_id,
+              CASE 
+                WHEN v.vote = 'yes' THEN 1
+                WHEN v.vote = 'no' THEN -1
+                WHEN v.vote = 'abstain' THEN 0
+              END as vote_val
+            FROM votes v
+            JOIN bill_list bl ON v.bill_id = bl.bill_id
+            JOIN mep_vote_counts mvc ON v.mep_id = mvc.mep_id
+            WHERE v.vote IN ('yes', 'no', 'abstain') AND v.mep_id IS NOT NULL
+          )
+          SELECT 
+            mep_id,
+            json_object_agg(bill_id, vote_val ORDER BY bill_id) as votes
+          FROM mep_votes_encoded
+          GROUP BY mep_id
+          ORDER BY mep_id
+          LIMIT 1000
+        `);
+        
+        if (mepVectorsRes.rows.length >= 10) { // Need at least some MEPs for PCA
+          // Build MEP matrix: each row is an MEP, each column is a bill
+          const mepMatrix = mepVectorsRes.rows.map(row => {
+            const votes = row.votes;
+            return allBillIds.map(billId => {
+              const val = votes[billId];
+              return val !== undefined && val !== null ? val : 0;
+            });
+          });
+          
+          // Compute PCA components from MEP data
+          const { components, means } = computePCComponents(mepMatrix, 2);
+          
+          if (components && components.length >= 2 && means) {
+            // Build user's voting vector (same format: yes=1, no=-1, neutral/skip=0)
+            const userVector = allBillIds.map(billId => {
+              const response = responseMap[billId];
+              if (!response || response.answer === 'skip' || response.answer === 'neutral') return 0;
+              return response.answer === 'agree' ? 1 : -1;
+            });
+            
+            // Center user vector using same means as MEPs
+            const centeredUser = userVector.map((v, i) => v - means[i]);
+            
+            // Project onto first two principal components
+            const x = centeredUser.reduce((sum, v, i) => sum + v * components[0][i], 0);
+            const y = centeredUser.reduce((sum, v, i) => sum + v * components[1][i], 0);
+            
+            userPCA = { x, y };
+          }
+        }
+      }
+    } catch (pcaError) {
+      console.error('Error calculating user PCA:', pcaError);
+      // Don't fail the whole request if PCA fails
+    }
+
     res.json({ 
       sessionId: session, 
       topMatches, 
       partyMatches, 
       totalMepsCompared: matches.length,
-      countryFilter: countryCode || null
+      countryFilter: countryCode || null,
+      userPCA // Add user's PCA position
     });
   } catch (error) {
     console.error('Error processing VAA submission:', error);

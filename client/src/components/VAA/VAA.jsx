@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import VAAUserPCA from '../VAAUserPCA';
 import './VAA.css';
 
 const EU_COUNTRIES = {
@@ -312,6 +313,13 @@ export default function VAA() {
               ))}
             </div>
           </section>
+
+          {/* User PCA Position */}
+          {results.userPCA && (
+            <section className="results-section card">
+              <VAAUserPCA userPCA={results.userPCA} />
+            </section>
+          )}
 
           {/* Country Filter Info */}
           {results.countryFilter && (

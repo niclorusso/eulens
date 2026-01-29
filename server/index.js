@@ -1927,11 +1927,12 @@ app.post('/api/admin/scrape', async (req, res) => {
       }
     });
 
-    // Don't wait for completion - return immediately
+    // Return immediately - scraper runs in background
     res.json({ 
       success: true, 
-      message: 'Scraper started in background. Check logs for progress.',
-      note: 'This may take 10-30 minutes. Monitor logs in Render dashboard.'
+      message: 'Scraper started in background',
+      note: 'This may take 10-30 minutes. Check Render logs for progress.',
+      tip: 'You can monitor progress in Render dashboard → Logs'
     });
 
   } catch (error) {

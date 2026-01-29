@@ -1870,3 +1870,127 @@ app.listen(PORT, () => {
     });
   }
 });
+
+// Admin endpoint to trigger data scraping (for initial data load)
+// WARNING: This should be protected in production!
+app.post('/api/admin/scrape', async (req, res) => {
+  try {
+    // Simple protection - check for admin token (set ADMIN_TOKEN in env)
+    const adminToken = req.headers['x-admin-token'];
+    if (process.env.ADMIN_TOKEN && adminToken !== process.env.ADMIN_TOKEN) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Import and run scraper
+    const { spawn } = await import('child_process');
+    const { fileURLToPath } = await import('url');
+    const { dirname, join } = await import('path');
+    
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = dirname(__filename);
+    const scraperPath = join(__dirname, '..', 'scripts', 'scrapeEUParliament.js');
+
+    console.log('[Admin] Starting scraper...');
+    
+    const scraper = spawn('node', [scraperPath], {
+      cwd: join(__dirname, '..'),
+      env: { ...process.env },
+      stdio: 'pipe'
+    });
+
+    let output = '';
+    scraper.stdout.on('data', (data) => {
+      output += data.toString();
+      console.log(`[Scraper] ${data.toString()}`);
+    });
+
+    scraper.stderr.on('data', (data) => {
+      output += data.toString();
+      console.error(`[Scraper Error] ${data.toString()}`);
+    });
+
+    scraper.on('close', (code) => {
+      if (code === 0) {
+        console.log('[Admin] Scraper completed successfully');
+        res.json({ 
+          success: true, 
+          message: 'Scraper completed successfully',
+          output: output.split('\n').slice(-50).join('\n') // Last 50 lines
+        });
+      } else {
+        console.error(`[Admin] Scraper failed with code ${code}`);
+        res.status(500).json({ 
+          success: false, 
+          error: `Scraper failed with code ${code}`,
+          output: output.split('\n').slice(-50).join('\n')
+        });
+      }
+    });
+
+    // Don't wait for completion - return immediately
+    res.json({ 
+      success: true, 
+      message: 'Scraper started in background. Check logs for progress.',
+      note: 'This may take 10-30 minutes. Monitor logs in Render dashboard.'
+    });
+
+  } catch (error) {
+    console.error('[Admin] Error starting scraper:', error);
+    res.status(500).json({ error: 'Failed to start scraper', details: error.message });
+  }
+});
+
+// Admin endpoint to trigger incremental update
+app.post('/api/admin/update', async (req, res) => {
+  try {
+    const adminToken = req.headers['x-admin-token'];
+    if (process.env.ADMIN_TOKEN && adminToken !== process.env.ADMIN_TOKEN) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { spawn } = await import('child_process');
+    const { fileURLToPath } = await import('url');
+    const { dirname, join } = await import('path');
+    
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = dirname(__filename);
+    const updatePath = join(__dirname, '..', 'scripts', 'updateData.js');
+
+    console.log('[Admin] Starting incremental update...');
+    
+    const update = spawn('node', [updatePath], {
+      cwd: join(__dirname, '..'),
+      env: { ...process.env },
+      stdio: 'pipe'
+    });
+
+    let output = '';
+    update.stdout.on('data', (data) => {
+      output += data.toString();
+      console.log(`[Update] ${data.toString()}`);
+    });
+
+    update.stderr.on('data', (data) => {
+      output += data.toString();
+      console.error(`[Update Error] ${data.toString()}`);
+    });
+
+    update.on('close', (code) => {
+      if (code === 0) {
+        console.log('[Admin] Update completed successfully');
+      } else {
+        console.error(`[Admin] Update failed with code ${code}`);
+      }
+    });
+
+    res.json({ 
+      success: true, 
+      message: 'Update started. Check logs for progress.',
+      output: output.split('\n').slice(-20).join('\n')
+    });
+
+  } catch (error) {
+    console.error('[Admin] Error starting update:', error);
+    res.status(500).json({ error: 'Failed to start update', details: error.message });
+  }
+});

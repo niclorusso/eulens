@@ -34,6 +34,22 @@ export default function BillDetail() {
     'SI': 'Slovenia', 'ES': 'Spain', 'SE': 'Sweden'
   };
 
+  // Parse markdown bold (**text**) to React elements
+  function parseMarkdownBold(text) {
+    if (!text) return text;
+    
+    // Split by **text** pattern and create React elements
+    const parts = text.split(/\*\*([^*]+)\*\*/g);
+    
+    return parts.map((part, index) => {
+      // Odd indices are the bold parts (captured groups)
+      if (index % 2 === 1) {
+        return <strong key={index}>{part}</strong>;
+      }
+      return part;
+    });
+  }
+
   // Parse reasons text which might be in various formats:
   // - PostgreSQL array format: {"reason1","reason2"}
   // - JSON array: ["reason1","reason2"]
@@ -235,7 +251,7 @@ export default function BillDetail() {
                             <h4>✓ Arguments For</h4>
                             <div className="reasons-content">
                               {parseReasons(summary.reasons_yes).map((reason, i) => (
-                                <p key={i}>{reason}</p>
+                                <p key={i}>{parseMarkdownBold(reason)}</p>
                               ))}
                             </div>
                           </div>
@@ -245,7 +261,7 @@ export default function BillDetail() {
                             <h4>✗ Arguments Against</h4>
                             <div className="reasons-content">
                               {parseReasons(summary.reasons_no).map((reason, i) => (
-                                <p key={i}>{reason}</p>
+                                <p key={i}>{parseMarkdownBold(reason)}</p>
                               ))}
                             </div>
                           </div>

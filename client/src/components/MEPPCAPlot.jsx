@@ -33,86 +33,8 @@ const GROUP_SHORT_NAMES = {
   'Non-attached Members': 'NI'
 };
 
-// Simple PCA implementation using power iteration
-function computePCA(data, numComponents = 2) {
-  const n = data.length;
-  if (n === 0) return { projections: [], variance: [] };
-  
-  const m = data[0].length;
-  
-  // Center the data (subtract mean from each column)
-  const means = new Array(m).fill(0);
-  for (let j = 0; j < m; j++) {
-    for (let i = 0; i < n; i++) {
-      means[j] += data[i][j];
-    }
-    means[j] /= n;
-  }
-  
-  const centered = data.map(row => row.map((val, j) => val - means[j]));
-  
-  const components = [];
-  const variances = [];
-  let currentData = centered.map(row => [...row]);
-  
-  for (let comp = 0; comp < numComponents; comp++) {
-    // Power iteration to find principal component
-    // Use deterministic initialization (1, 1, 1, ...) instead of random
-    let pc = new Array(m).fill(1);
-    
-    // Normalize
-    let norm = Math.sqrt(pc.reduce((sum, v) => sum + v * v, 0));
-    pc = pc.map(v => v / norm);
-    
-    for (let iter = 0; iter < 100; iter++) {
-      // Compute X^T * X * pc
-      const xpc = currentData.map(row => row.reduce((sum, v, j) => sum + v * pc[j], 0));
-      const newPc = new Array(m).fill(0);
-      for (let j = 0; j < m; j++) {
-        for (let i = 0; i < n; i++) {
-          newPc[j] += currentData[i][j] * xpc[i];
-        }
-      }
-      
-      // Normalize
-      norm = Math.sqrt(newPc.reduce((sum, v) => sum + v * v, 0));
-      if (norm < 1e-10) break;
-      pc = newPc.map(v => v / norm);
-    }
-    
-    // Enforce sign convention: sum of components should be negative
-    // This ensures consistent orientation across runs
-    const sum = pc.reduce((a, b) => a + b, 0);
-    if (sum > 0) {
-      pc = pc.map(v => -v);
-    }
-    
-    components.push(pc);
-    
-    // Compute variance explained
-    const projections = currentData.map(row => row.reduce((sum, v, j) => sum + v * pc[j], 0));
-    const variance = projections.reduce((sum, v) => sum + v * v, 0) / n;
-    variances.push(variance);
-    
-    // Deflate: remove this component from data
-    for (let i = 0; i < n; i++) {
-      const proj = projections[i];
-      for (let j = 0; j < m; j++) {
-        currentData[i][j] -= proj * pc[j];
-      }
-    }
-  }
-  
-  // Project original centered data onto components
-  const finalProjections = centered.map(row => 
-    components.map(pc => row.reduce((sum, v, j) => sum + v * pc[j], 0))
-  );
-  
-  return { projections: finalProjections, variance: variances, components };
-}
-
 export default function MEPPCAPlot() {
-  const [mepData, setMepData] = useState(null);
+  const [pcaData, setPcaData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedGroup, setSelectedGroup] = useState(null);
@@ -126,79 +48,49 @@ export default function MEPPCAPlot() {
   async function fetchData() {
     try {
       setLoading(true);
-      const res = await axios.get('/api/stats/mep-voting-vectors', {
-        params: { minVotes: 20 }
-      });
-      setMepData(res.data);
+      // Use pre-computed coordinates - much faster!
+      const res = await axios.get('/api/stats/mep-pca-coords');
+      setPcaData(res.data);
     } catch (err) {
-      console.error('Error fetching MEP voting data:', err);
-      setError('Failed to load MEP voting data');
+      console.error('Error fetching MEP PCA data:', err);
+      setError('Failed to load MEP PCA data');
     } finally {
       setLoading(false);
     }
   }
 
-  // Compute PCA when data is loaded
-  const pcaResult = useMemo(() => {
-    if (!mepData || !mepData.meps || mepData.meps.length === 0) return null;
+  // Transform pre-computed data into points for visualization
+  const pcaPoints = useMemo(() => {
+    if (!pcaData || !pcaData.meps || pcaData.meps.length === 0) return [];
     
-    const { meps, billIds } = mepData;
+    return pcaData.meps.map(mep => ({
+      mep_id: mep.mepId,
+      name: mep.name,
+      group: mep.group,
+      x: mep.x,
+      y: mep.y,
+      z: mep.z || 0,
+      color: GROUP_COLORS[mep.group] || '#808080'
+    }));
+  }, [pcaData]);
+
+  // Get variance explained from pre-computed data
+  const varianceExplained = useMemo(() => {
+    if (!pcaData?.variance || pcaData.variance.length === 0) return [];
+    const totalVariance = pcaData.variance.reduce((a, b) => a + b, 0);
+    return pcaData.variance.map(v => ((v / totalVariance) * 100).toFixed(1));
+  }, [pcaData]);
+  // Get bill loadings from pre-computed data
+  const topBillsPerComponent = useMemo(() => {
+    if (!pcaData?.billLoadings || pcaData.billLoadings.length === 0) return [];
     
-    // Create voting matrix: each row is an MEP, each column is a bill
-    // Fill with 0 for missing votes
-    const billIdToIndex = {};
-    billIds.forEach((id, idx) => { billIdToIndex[id] = idx; });
-    
-    const matrix = meps.map(mep => {
-      const row = new Array(billIds.length).fill(0);
-      mep.votes.forEach(v => {
-        const idx = billIdToIndex[v.bill_id];
-        if (idx !== undefined) {
-          row[idx] = v.vote;
-        }
-      });
-      return row;
-    });
-    
-    // Compute PCA with 3 components for 3D view
-    const { projections, variance, components } = computePCA(matrix, 3);
-    
-    // Calculate total variance and percentage explained
-    const totalVariance = variance.reduce((a, b) => a + b, 0);
-    const varianceExplained = variance.map(v => ((v / totalVariance) * 100).toFixed(1));
-    
-    // Find top bills for each component (highest absolute loadings)
-    const topBillsPerComponent = components.map((pc, compIdx) => {
-      const billLoadings = pc.map((loading, billIdx) => ({
-        billId: billIds[billIdx],
-        loading
-      }));
-      // Sort by absolute loading value
-      billLoadings.sort((a, b) => Math.abs(b.loading) - Math.abs(a.loading));
-      // Return top 3 positive and top 3 negative
-      const positive = billLoadings.filter(b => b.loading > 0).slice(0, 3);
-      const negative = billLoadings.filter(b => b.loading < 0).slice(0, 3);
+    // Transform to the expected format with positive/negative split
+    return pcaData.billLoadings.map(axis => {
+      const positive = axis.filter(b => b.loading > 0).slice(0, 3);
+      const negative = axis.filter(b => b.loading < 0).slice(0, 3);
       return { positive, negative };
     });
-    
-    // Create data points for scatter plot
-    const points = meps.map((mep, i) => ({
-      mep_id: mep.mep_id,
-      name: mep.mep_name,
-      group: mep.mep_group,
-      x: projections[i][0],
-      y: projections[i][1],
-      z: projections[i][2] || 0,
-      color: GROUP_COLORS[mep.mep_group] || '#808080'
-    }));
-    
-    return { points, varianceExplained, topBillsPerComponent, billIds };
-  }, [mepData]);
-
-  // Extract points for easier use
-  const pcaPoints = pcaResult?.points || [];
-  const varianceExplained = pcaResult?.varianceExplained || [];
-  const topBillsPerComponent = pcaResult?.topBillsPerComponent || [];
+  }, [pcaData]);
 
   // Get unique groups for legend
   const groups = useMemo(() => {

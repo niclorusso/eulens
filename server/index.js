@@ -851,14 +851,32 @@ app.get('/api/stats/overview', async (req, res) => {
   }
 });
 
-// Get party agreement matrix
+// Get party agreement matrix (uses pre-computed data if available)
 app.get('/api/stats/party-agreement', async (req, res) => {
   try {
-    // Calculate agreement between political groups
-    // Two groups "agree" on a bill if their majority position is the same
+    // Try pre-computed data first (much faster)
+    const precomputedRes = await pool.query(`
+      SELECT value FROM metadata WHERE key = 'party_agreement_matrix'
+    `);
+    
+    if (precomputedRes.rows.length > 0) {
+      const data = JSON.parse(precomputedRes.rows[0].value);
+      // Transform to expected format
+      const result = data.map(row => ({
+        group1: row.party1,
+        group2: row.party2,
+        total_bills: parseInt(row.total_bills),
+        agreements: parseInt(row.agreements),
+        agreement_pct: row.total_bills > 0 
+          ? Math.round(row.agreements / row.total_bills * 1000) / 10 
+          : 0
+      }));
+      return res.json(result);
+    }
+    
+    // Fallback: Calculate on the fly if no pre-computed data
     const result = await pool.query(`
       WITH group_majorities AS (
-        -- Get each group's majority position per bill
         SELECT
           bill_id,
           mep_group,
@@ -1092,12 +1110,107 @@ app.get('/api/stats/mep-voting-vectors', async (req, res) => {
   }
 });
 
-// Get party cohesion stats (how unified is each party in their votes)
+// Get pre-computed MEP PCA coordinates (FAST - no computation needed)
+app.get('/api/stats/mep-pca-coords', async (req, res) => {
+  try {
+    // Get MEPs with pre-computed PCA coordinates
+    const mepsResult = await pool.query(`
+      SELECT 
+        mep_id,
+        CONCAT(first_name, ' ', COALESCE(last_name, name)) as name,
+        political_group,
+        country_code,
+        pca_x,
+        pca_y,
+        pca_z
+      FROM meps
+      WHERE is_active = true 
+        AND pca_x IS NOT NULL
+      ORDER BY name
+    `);
+    
+    // Get pre-computed metadata (variance, bill loadings)
+    const varianceResult = await pool.query(`
+      SELECT value FROM metadata WHERE key = 'pca_variance'
+    `);
+    
+    const loadingsResult = await pool.query(`
+      SELECT value FROM metadata WHERE key = 'pca_bill_loadings'
+    `);
+    
+    const variance = varianceResult.rows[0]?.value 
+      ? JSON.parse(varianceResult.rows[0].value) 
+      : [0, 0, 0];
+    
+    const billLoadings = loadingsResult.rows[0]?.value
+      ? JSON.parse(loadingsResult.rows[0].value)
+      : [[], [], []];
+    
+    res.json({
+      meps: mepsResult.rows.map(m => ({
+        mepId: m.mep_id,
+        name: m.name,
+        group: m.political_group,
+        country: m.country_code,
+        x: m.pca_x,
+        y: m.pca_y,
+        z: m.pca_z
+      })),
+      variance,
+      billLoadings
+    });
+  } catch (error) {
+    console.error('Error fetching MEP PCA coordinates:', error);
+    res.status(500).json({ error: 'Failed to fetch MEP PCA coordinates' });
+  }
+});
+
+// Get pre-computed statistics (party agreement, cohesion, etc.)
+app.get('/api/stats/precomputed', async (req, res) => {
+  try {
+    const keys = ['party_agreement_matrix', 'party_cohesion', 'group_stats', 'last_precompute'];
+    const result = await pool.query(`
+      SELECT key, value FROM metadata WHERE key = ANY($1)
+    `, [keys]);
+    
+    const data = {};
+    for (const row of result.rows) {
+      try {
+        data[row.key] = JSON.parse(row.value);
+      } catch {
+        data[row.key] = row.value;
+      }
+    }
+    
+    res.json(data);
+  } catch (error) {
+    console.error('Error fetching precomputed stats:', error);
+    res.status(500).json({ error: 'Failed to fetch precomputed stats' });
+  }
+});
+
+// Get party cohesion stats (uses pre-computed data if available)
 app.get('/api/stats/party-cohesion', async (req, res) => {
   try {
+    // Try pre-computed data first (much faster)
+    const precomputedRes = await pool.query(`
+      SELECT value FROM metadata WHERE key = 'party_cohesion'
+    `);
+    
+    if (precomputedRes.rows.length > 0) {
+      const data = JSON.parse(precomputedRes.rows[0].value);
+      // Transform to expected format
+      const result = data.map(row => ({
+        political_group: row.party,
+        bills_voted: parseInt(row.bills_voted),
+        avg_cohesion: parseFloat(row.avg_cohesion)
+      }));
+      return res.json(result);
+    }
+    
+    // Fallback: Calculate on the fly if no pre-computed data
     const result = await pool.query(`
       WITH party_bill_votes AS (
-        -- Count votes by party per bill
         SELECT
           bill_id,
           mep_group,
@@ -1110,7 +1223,6 @@ app.get('/api/stats/party-cohesion', async (req, res) => {
         GROUP BY bill_id, mep_group, vote
       ),
       party_bill_stats AS (
-        -- Get majority and total for each party-bill combination
         SELECT
           bill_id,
           mep_group,
@@ -1530,92 +1642,33 @@ app.post('/api/vaa/submit', async (req, res) => {
       .map(([group, data]) => ({ group, match_percent: Math.round(data.total / data.count), mep_count: data.count }))
       .sort((a, b) => b.match_percent - a.match_percent);
 
-    // Calculate user's PCA position
+    // Calculate user's PCA position using pre-computed components
     let userPCA = null;
     try {
-      // Get the same bill set used for MEP PCA (bills with at least 50 votes)
-      const billListRes = await pool.query(`
-        SELECT DISTINCT bill_id
-        FROM votes
-        WHERE vote IN ('yes', 'no', 'abstain')
-        GROUP BY bill_id
-        HAVING COUNT(*) >= 50
-        ORDER BY bill_id
+      // Get pre-computed PCA components from metadata
+      const pcaMetaRes = await pool.query(`
+        SELECT value FROM metadata WHERE key = 'pca_components'
       `);
       
-      const allBillIds = billListRes.rows.map(r => parseInt(r.bill_id));
-      
-      if (allBillIds.length > 0) {
-        // Get MEP vectors for PCA computation (same query as /api/stats/mep-voting-vectors)
-        const mepVectorsRes = await pool.query(`
-          WITH bill_list AS (
-            SELECT DISTINCT bill_id
-            FROM votes
-            WHERE vote IN ('yes', 'no', 'abstain')
-            GROUP BY bill_id
-            HAVING COUNT(*) >= 50
-          ),
-          mep_vote_counts AS (
-            SELECT mep_id, COUNT(*) as vote_count
-            FROM votes v
-            JOIN bill_list bl ON v.bill_id = bl.bill_id
-            WHERE vote IN ('yes', 'no', 'abstain') AND mep_id IS NOT NULL
-            GROUP BY mep_id
-            HAVING COUNT(*) >= 20
-          ),
-          mep_votes_encoded AS (
-            SELECT 
-              v.mep_id,
-              v.bill_id,
-              CASE 
-                WHEN v.vote = 'yes' THEN 1
-                WHEN v.vote = 'no' THEN -1
-                WHEN v.vote = 'abstain' THEN 0
-              END as vote_val
-            FROM votes v
-            JOIN bill_list bl ON v.bill_id = bl.bill_id
-            JOIN mep_vote_counts mvc ON v.mep_id = mvc.mep_id
-            WHERE v.vote IN ('yes', 'no', 'abstain') AND v.mep_id IS NOT NULL
-          )
-          SELECT 
-            mep_id,
-            json_object_agg(bill_id, vote_val ORDER BY bill_id) as votes
-          FROM mep_votes_encoded
-          GROUP BY mep_id
-          ORDER BY mep_id
-          LIMIT 1000
-        `);
+      if (pcaMetaRes.rows.length > 0) {
+        const { components, means, billIds: allBillIds } = JSON.parse(pcaMetaRes.rows[0].value);
         
-        if (mepVectorsRes.rows.length >= 10) { // Need at least some MEPs for PCA
-          // Build MEP matrix: each row is an MEP, each column is a bill
-          const mepMatrix = mepVectorsRes.rows.map(row => {
-            const votes = row.votes;
-            return allBillIds.map(billId => {
-              const val = votes[billId];
-              return val !== undefined && val !== null ? val : 0;
-            });
+        if (components && components.length >= 2 && means && allBillIds) {
+          // Build user's voting vector (same format: yes=1, no=-1, neutral/skip=0)
+          const userVector = allBillIds.map(billId => {
+            const response = responseMap[billId];
+            if (!response || response.answer === 'skip' || response.answer === 'neutral') return 0;
+            return response.answer === 'agree' ? 1 : -1;
           });
           
-          // Compute PCA components from MEP data
-          const { components, means } = computePCComponents(mepMatrix, 2);
+          // Center user vector using same means as MEPs
+          const centeredUser = userVector.map((v, i) => v - means[i]);
           
-          if (components && components.length >= 2 && means) {
-            // Build user's voting vector (same format: yes=1, no=-1, neutral/skip=0)
-            const userVector = allBillIds.map(billId => {
-              const response = responseMap[billId];
-              if (!response || response.answer === 'skip' || response.answer === 'neutral') return 0;
-              return response.answer === 'agree' ? 1 : -1;
-            });
-            
-            // Center user vector using same means as MEPs
-            const centeredUser = userVector.map((v, i) => v - means[i]);
-            
-            // Project onto first two principal components
-            const x = centeredUser.reduce((sum, v, i) => sum + v * components[0][i], 0);
-            const y = centeredUser.reduce((sum, v, i) => sum + v * components[1][i], 0);
-            
-            userPCA = { x, y };
-          }
+          // Project onto first two principal components
+          const x = centeredUser.reduce((sum, v, i) => sum + v * components[0][i], 0);
+          const y = centeredUser.reduce((sum, v, i) => sum + v * components[1][i], 0);
+          
+          userPCA = { x, y };
         }
       }
     } catch (pcaError) {
@@ -2001,5 +2054,56 @@ app.post('/api/admin/update', async (req, res) => {
   } catch (error) {
     console.error('[Admin] Error starting update:', error);
     res.status(500).json({ error: 'Failed to start update', details: error.message });
+  }
+});
+
+// Admin endpoint to trigger precompute stats
+app.post('/api/admin/precompute', async (req, res) => {
+  try {
+    const adminToken = req.headers['x-admin-token'];
+    if (process.env.ADMIN_TOKEN && adminToken !== process.env.ADMIN_TOKEN) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { spawn } = await import('child_process');
+    const { fileURLToPath } = await import('url');
+    const { dirname, join } = await import('path');
+    
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = dirname(__filename);
+    const scriptPath = join(__dirname, '..', 'scripts', 'precomputeStats.js');
+
+    console.log('[Admin] Starting statistics pre-computation...');
+    
+    const proc = spawn('node', [scriptPath], {
+      cwd: join(__dirname, '..'),
+      env: { ...process.env },
+      stdio: 'pipe'
+    });
+
+    proc.stdout.on('data', (data) => {
+      console.log(`[Precompute] ${data.toString()}`);
+    });
+
+    proc.stderr.on('data', (data) => {
+      console.error(`[Precompute Error] ${data.toString()}`);
+    });
+
+    proc.on('close', (code) => {
+      if (code === 0) {
+        console.log('[Admin] Precompute completed successfully');
+      } else {
+        console.error(`[Admin] Precompute failed with code ${code}`);
+      }
+    });
+
+    res.json({ 
+      success: true, 
+      message: 'Precompute started. Check logs for progress.'
+    });
+
+  } catch (error) {
+    console.error('[Admin] Error starting precompute:', error);
+    res.status(500).json({ error: 'Failed to start precompute', details: error.message });
   }
 });

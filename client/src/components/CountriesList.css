@@ -136,6 +136,24 @@
 @media (max-width: 768px) {
   .countries-grid {
     grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .country-card {
+    border-radius: 0.5rem;
+  }
+
+  .country-header {
+    padding: 1rem;
+  }
+
+  .country-name {
+    font-size: 1.1rem;
+  }
+
+  .country-code {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.4rem;
   }
 
   .country-stats {
@@ -146,5 +164,47 @@
 
   .country-stats .stat-value {
     font-size: 1.25rem;
+  }
+
+  .country-stats .stat-label {
+    font-size: 0.7rem;
+  }
+
+  .country-votes {
+    padding: 0.75rem 1rem 1rem;
+  }
+
+  .country-votes .vote-bar {
+    height: 20px;
+  }
+
+  .country-votes .vote-labels {
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .countries-grid {
+    gap: 0.75rem;
+  }
+
+  .country-header {
+    padding: 0.75rem;
+  }
+
+  .country-name {
+    font-size: 1rem;
+  }
+
+  .country-stats {
+    padding: 0.75rem;
+  }
+
+  .country-stats .stat-value {
+    font-size: 1.1rem;
+  }
+
+  .country-votes {
+    padding: 0.5rem 0.75rem 0.75rem;
   }
 }

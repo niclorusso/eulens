@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import './MEPsList.css';
 
 const GROUP_COLORS = {
@@ -94,13 +94,6 @@ export default function MEPsList({ embedded = false }) {
     );
   }
 
-  // Hardcoded gender distribution (EP 10th legislature official stats)
-  const genderData = [
-    { name: 'Male', value: 439, color: '#3b82f6' },
-    { name: 'Female', value: 281, color: '#ec4899' }
-  ];
-  const genderStats = { male: 61, female: 39, counts: { male: 439, female: 281 } };
-
   return (
     <main className="container">
       <div className="meps-list-page">
@@ -114,40 +107,6 @@ export default function MEPsList({ embedded = false }) {
           <section className="meps-stats-overview card">
             <h2>MEP Overview</h2>
             <div className="stats-grid">
-              {/* Gender Ratio */}
-              <div className="stat-card">
-                <h3>Gender Distribution</h3>
-                <div className="stat-chart">
-                  <ResponsiveContainer width="100%" height={250}>
-                    <PieChart>
-                      <Pie
-                        data={genderData}
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={70}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {genderData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="stat-numbers">
-                  <div className="stat-number">
-                    <span className="stat-value">{genderStats.counts.male}</span>
-                    <span className="stat-label">Male ({genderStats.male}%)</span>
-                  </div>
-                  <div className="stat-number">
-                    <span className="stat-value">{genderStats.counts.female}</span>
-                    <span className="stat-label">Female ({genderStats.female}%)</span>
-                  </div>
-                </div>
-              </div>
-
               {/* Birth Decades */}
               <div className="stat-card">
                 <h3>Birth Decades</h3>

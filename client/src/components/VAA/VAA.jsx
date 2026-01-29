@@ -42,9 +42,13 @@ function getShortName(name) {
   return 'NI';
 }
 
+const QUESTION_OPTIONS = [20, 30, 50, 75, 100];
+
 export default function VAA() {
   const [stage, setStage] = useState('intro'); // intro, quiz, results
+  const [allQuestions, setAllQuestions] = useState([]);
   const [questions, setQuestions] = useState([]);
+  const [questionLimit, setQuestionLimit] = useState(20);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [responses, setResponses] = useState([]);
   const [results, setResults] = useState(null);
@@ -58,17 +62,27 @@ export default function VAA() {
   async function fetchQuestions() {
     try {
       const res = await axios.get('/api/vaa/questions');
-      setQuestions(res.data);
+      setAllQuestions(res.data);
+      // Initially set questions to default limit
+      setQuestions(res.data.slice(0, 20));
     } catch (error) {
       console.error('Error fetching VAA questions:', error);
     }
   }
 
+  function handleQuestionLimitChange(limit) {
+    setQuestionLimit(limit);
+    setQuestions(allQuestions.slice(0, limit));
+  }
+
   function startQuiz() {
-    if (questions.length === 0) {
+    if (allQuestions.length === 0) {
       alert('No questions available. Please check back later.');
       return;
     }
+    // Apply the selected limit
+    const limitedQuestions = allQuestions.slice(0, questionLimit);
+    setQuestions(limitedQuestions);
     setStage('quiz');
     setCurrentQuestion(0);
     setResponses([]);
@@ -129,17 +143,36 @@ export default function VAA() {
 
           <div className="intro-info">
             <div className="info-item">
-              <span className="info-number">{questions.length}</span>
+              <span className="info-number">{questionLimit}</span>
               <span className="info-label">Questions</span>
             </div>
             <div className="info-item">
-              <span className="info-number">~5</span>
+              <span className="info-number">~{Math.ceil(questionLimit / 4)}</span>
               <span className="info-label">Minutes</span>
             </div>
             <div className="info-item">
               <span className="info-number">720+</span>
               <span className="info-label">MEPs Compared</span>
             </div>
+          </div>
+
+          <div className="question-limit-selector">
+            <label>Number of questions:</label>
+            <div className="limit-buttons">
+              {QUESTION_OPTIONS.filter(n => n <= allQuestions.length || n === 20).map(num => (
+                <button
+                  key={num}
+                  className={`limit-btn ${questionLimit === num ? 'active' : ''}`}
+                  onClick={() => handleQuestionLimitChange(num)}
+                  disabled={num > allQuestions.length}
+                >
+                  {num}
+                </button>
+              ))}
+            </div>
+            <p className="limit-hint">
+              More questions = more accurate results
+            </p>
           </div>
 
           <div className="country-selector">
@@ -165,9 +198,9 @@ export default function VAA() {
           <button
             className="btn-primary btn-large"
             onClick={startQuiz}
-            disabled={questions.length === 0}
+            disabled={allQuestions.length === 0}
           >
-            {questions.length > 0 ? 'Start Quiz' : 'Loading Questions...'}
+            {allQuestions.length > 0 ? 'Start Quiz' : 'Loading Questions...'}
           </button>
 
           <div className="intro-note">

@@ -54,6 +54,22 @@ curl -X POST https://eulens-api.onrender.com/api/admin/update
 
 This is faster and only adds new votes/bills.
 
+## Step 5: Pre-compute Statistics (Required for Fast Loading)
+
+After scraping/updating, pre-compute all statistics:
+```bash
+curl -X POST https://eulens-api.onrender.com/api/admin/precompute
+```
+
+This pre-computes:
+- MEP PCA coordinates (for the Compass visualization)
+- Party agreement matrix
+- Party cohesion stats
+- Group statistics
+- Bill loadings for PCA interpretation
+
+**Without this step, the frontend will load slowly!**
+
 ## Security Note
 
 If you set `ADMIN_TOKEN` in Render's environment variables, you'll need to include it:

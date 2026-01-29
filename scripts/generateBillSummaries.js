@@ -138,13 +138,36 @@ async function main() {
     process.exit(1);
   }
 
-  // Get bills without summaries
+  // Get bills without summaries, ordered by vote variance (most divisive first = most important for PCA)
   const result = await pool.query(`
-    SELECT b.id, b.eu_id, b.title, b.description, b.category, b.status, b.date_adopted
+    WITH bill_stats AS (
+      SELECT 
+        bill_id,
+        COUNT(*) as total_votes,
+        COUNT(CASE WHEN vote = 'yes' THEN 1 END)::float / NULLIF(COUNT(*), 0) as yes_pct,
+        COUNT(CASE WHEN vote = 'no' THEN 1 END)::float / NULLIF(COUNT(*), 0) as no_pct
+      FROM votes
+      WHERE vote IN ('yes', 'no', 'abstain')
+      GROUP BY bill_id
+      HAVING COUNT(*) >= 50
+    ),
+    bill_variance AS (
+      SELECT 
+        bill_id,
+        total_votes,
+        -- Variance: bills where yes/no are close to 50/50 are most divisive
+        -- Maximum at 0.5, minimum at 0 or 1
+        (yes_pct * (1 - yes_pct)) + (no_pct * (1 - no_pct)) as vote_variance
+      FROM bill_stats
+    )
+    SELECT b.id, b.eu_id, b.title, b.description, b.category, b.status, b.date_adopted,
+           COALESCE(bv.vote_variance, 0) as vote_variance,
+           COALESCE(bv.total_votes, 0) as total_votes
     FROM bills b
     LEFT JOIN bill_summaries bs ON b.id = bs.bill_id
+    LEFT JOIN bill_variance bv ON b.id = bv.bill_id
     WHERE bs.id IS NULL
-    ORDER BY b.date_adopted DESC
+    ORDER BY bv.vote_variance DESC NULLS LAST, bv.total_votes DESC NULLS LAST
   `);
 
   const bills = result.rows;

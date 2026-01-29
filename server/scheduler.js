@@ -95,6 +95,15 @@ async function runUpdateScript() {
       console.log('[Scheduler] Step 4: Skipping PCA loadings (set UPDATE_PCA_LOADINGS=true to enable)');
     }
 
+    // Step 5: Pre-compute all statistics (PCA coords, party agreement, cohesion, etc.)
+    // This is always run to ensure fast frontend loading
+    console.log('[Scheduler] Step 5: Pre-computing statistics...');
+    try {
+      await runScript('scripts/precomputeStats.js', 'Precompute Stats');
+    } catch (err) {
+      console.warn('[Scheduler] Stats pre-computation failed:', err.message);
+    }
+
     console.log('[Scheduler] Weekly update completed successfully!');
   } catch (error) {
     console.error('[Scheduler] Update process failed:', error);

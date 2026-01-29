@@ -144,7 +144,14 @@ async function updateData() {
   }
 
   try {
+    // Get existing data first to check if we need to fetch anything
+    const existingVoteIds = await getExistingVoteEuIds();
+    const existingMepIds = await getExistingMepIds();
+    
+    console.log(`Database currently has: ${existingVoteIds.size} bills, ${existingMepIds.size} MEPs`);
+
     // Fetch latest data from HowTheyVote
+    console.log('Fetching latest data from HowTheyVote.eu...');
     const [votesData, membersData, memberVotesData] = await Promise.all([
       fetchCSV('votes.csv'),
       fetchCSV('members.csv'),
@@ -157,10 +164,6 @@ async function updateData() {
     const term10Votes = votesData.filter(v => v.group_key?.startsWith('10.'));
     console.log(`Term 10 votes: ${term10Votes.length}`);
 
-    // Get existing data
-    const existingVoteIds = await getExistingVoteEuIds();
-    const existingMepIds = await getExistingMepIds();
-
     // Find new votes (not in database)
     const newVotes = term10Votes.filter(v => !existingVoteIds.has(v.id));
     console.log(`New votes to add: ${newVotes.length}`);
@@ -168,6 +171,17 @@ async function updateData() {
     // Find new MEPs
     const newMembers = membersData.filter(m => !existingMepIds.has(m.id));
     console.log(`New MEPs to add: ${newMembers.length}`);
+
+    // Early exit if no new data
+    if (newVotes.length === 0 && newMembers.length === 0) {
+      console.log('='.repeat(60));
+      console.log('✅ No new data found - database is up to date!');
+      console.log('Skipping update process.');
+      console.log('='.repeat(60));
+      await setLastUpdateTimestamp(new Date()); // Update timestamp even if no new data
+      await pool.end();
+      process.exit(0);
+    }
 
     // Insert new MEPs
     let mepsAdded = 0;
@@ -259,9 +273,11 @@ async function updateData() {
         const billId = billResult.rows[0].id;
         billsAdded++;
 
-        // Insert individual MEP votes
+        // Insert individual MEP votes (only for new bills)
         const memberVotes = votesByVoteId.get(vote.id) || [];
-        for (const mv of memberVotes) {
+        // Limit to first 1000 votes per bill to avoid memory issues
+        const votesToProcess = memberVotes.slice(0, 1000);
+        for (const mv of votesToProcess) {
           const member = memberLookup.get(mv.member_id);
           if (!member) continue;
 

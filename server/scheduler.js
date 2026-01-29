@@ -50,6 +50,7 @@ async function runUpdateScript() {
   }
 
   console.log('[Scheduler] Starting weekly data update...');
+  console.log(`[Scheduler] Time: ${new Date().toISOString()}`);
   isUpdateRunning = true;
 
   try {
@@ -57,34 +58,41 @@ async function runUpdateScript() {
     console.log('[Scheduler] Step 1: Fetching new votes and bills...');
     await runScript('scripts/updateData.js', 'Data Update');
 
-    // Step 2: Generate summaries for new bills (if enabled)
-    if (process.env.GENERATE_SUMMARIES !== 'false') {
+    // Step 2: Generate summaries for new bills (if enabled and new bills were added)
+    // Only run if GENERATE_SUMMARIES is explicitly enabled (default: skip to save API costs)
+    if (process.env.GENERATE_SUMMARIES === 'true') {
       console.log('[Scheduler] Step 2: Generating bill summaries...');
       try {
         await runScript('scripts/generateBillSummaries.js', 'Bill Summaries');
       } catch (err) {
         console.warn('[Scheduler] Bill summaries generation failed, continuing...');
       }
+    } else {
+      console.log('[Scheduler] Step 2: Skipping bill summaries (set GENERATE_SUMMARIES=true to enable)');
     }
 
-    // Step 3: Generate VAA questions (if enabled)
-    if (process.env.GENERATE_VAA !== 'false') {
+    // Step 3: Generate VAA questions (if enabled and new bills were added)
+    if (process.env.GENERATE_VAA === 'true') {
       console.log('[Scheduler] Step 3: Generating VAA questions...');
       try {
         await runScript('scripts/generateVAAQuestions.js', 'VAA Questions');
       } catch (err) {
         console.warn('[Scheduler] VAA questions generation failed, continuing...');
       }
+    } else {
+      console.log('[Scheduler] Step 3: Skipping VAA questions (set GENERATE_VAA=true to enable)');
     }
 
     // Step 4: Update PCA loadings for VAA ordering (if enabled)
-    if (process.env.UPDATE_PCA_LOADINGS !== 'false') {
+    if (process.env.UPDATE_PCA_LOADINGS === 'true') {
       console.log('[Scheduler] Step 4: Updating PCA loadings...');
       try {
         await runScript('scripts/calculateBillPCALoadings.js', 'PCA Loadings');
       } catch (err) {
         console.warn('[Scheduler] PCA loadings update failed, continuing...');
       }
+    } else {
+      console.log('[Scheduler] Step 4: Skipping PCA loadings (set UPDATE_PCA_LOADINGS=true to enable)');
     }
 
     console.log('[Scheduler] Weekly update completed successfully!');

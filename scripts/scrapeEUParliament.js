@@ -218,6 +218,9 @@ async function clearExistingData() {
   console.log('Clearing existing data...');
   await pool.query('DELETE FROM discussions');
   await pool.query('DELETE FROM votes');
+  await pool.query('DELETE FROM vaa_responses');
+  await pool.query('DELETE FROM vaa_questions');
+  await pool.query('DELETE FROM bill_summaries');
   await pool.query('DELETE FROM bills');
 
   // Create/update meps table with all fields

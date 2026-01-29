@@ -17,7 +17,7 @@ const app = express();
 const { Pool } = pg;
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgres://localhost/agora_eu'
+  connectionString: process.env.DATABASE_URL || 'postgres://localhost/eulens'
 });
 
 app.use(cors());
@@ -1624,7 +1624,7 @@ Recent topics in the European Parliament include: ${recentVotes.rows.map(v => v.
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
-  console.log(`Agora EU backend running on port ${PORT}`);
+  console.log(`EULens backend running on port ${PORT}`);
 
   // Initialize scheduler for automatic weekly data updates
   // Set ENABLE_SCHEDULER=true in .env to enable automatic updates

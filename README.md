@@ -4,7 +4,7 @@ A digital platform for EU representation and transparency. Track, analyze, and u
 
 ## Vision
 
-Agora EU transforms the EU's legislative process from opaque to transparent, empowering European citizens to:
+EULens transforms the EU's legislative process from opaque to transparent, empowering European citizens to:
 
 - **See what's being decided** - Track real EU Parliament votes and legislation
 - **Understand the impact** - See how decisions affect each country differently
@@ -137,7 +137,7 @@ This starts:
 ## Project Structure
 
 ```
-agora-eu/
+eulens/
 ├── server/
 │   ├── index.js           # Express API server
 │   └── schema.sql         # PostgreSQL schema
@@ -208,7 +208,7 @@ We welcome contributions! Areas to work on:
 
 ## Philosophy
 
-Agora EU is built on these principles:
+EULens is built on these principles:
 
 1. **Transparency** - All data is public and sourced ethically
 2. **Inclusivity** - Available in all EU languages

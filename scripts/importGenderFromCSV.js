@@ -7,7 +7,7 @@ dotenv.config();
 
 const { Pool } = pg;
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgres://localhost/agora_eu'
+  connectionString: process.env.DATABASE_URL || 'postgres://localhost/eulens'
 });
 
 /**

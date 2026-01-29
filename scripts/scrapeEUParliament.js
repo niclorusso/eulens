@@ -8,7 +8,7 @@ dotenv.config();
 
 const { Pool } = pg;
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgres://localhost/agora_eu'
+  connectionString: process.env.DATABASE_URL || 'postgres://localhost/eulens'
 });
 
 // HowTheyVote.eu data source - weekly updated EU Parliament voting data

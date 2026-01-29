@@ -20,7 +20,7 @@ dotenv.config();
 
 const { Pool } = pg;
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgres://agora_user:agora_password@localhost/agora_eu'
+  connectionString: process.env.DATABASE_URL || 'postgres://agora_user:agora_password@localhost/eulens'
 });
 
 const HOWTHEYVOTE_BASE = 'https://data.howtheyvote.eu';
@@ -130,7 +130,7 @@ function categorizeVote(vote) {
 
 async function updateData() {
   console.log('='.repeat(60));
-  console.log('Agora EU - Data Update Script');
+  console.log('EULens - Data Update Script');
   console.log('Started at:', new Date().toISOString());
   console.log('='.repeat(60));
 

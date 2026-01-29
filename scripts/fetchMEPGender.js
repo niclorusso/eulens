@@ -8,7 +8,7 @@ dotenv.config();
 
 const { Pool } = pg;
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgres://localhost/agora_eu'
+  connectionString: process.env.DATABASE_URL || 'postgres://localhost/eulens'
 });
 
 /**
@@ -87,7 +87,7 @@ async function fetchMEPGenderFromOfficialSource() {
       const response = await axios.get(url, {
         timeout: 10000,
         headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; AgoraEU/1.0; +https://github.com/agora-eu)'
+          'User-Agent': 'Mozilla/5.0 (compatible; EULens/1.0; +https://github.com/eulens)'
         }
       });
       

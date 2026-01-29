@@ -1,7 +1,7 @@
 {
-  "name": "agora-eu",
+  "name": "eulens",
   "version": "0.1.0",
-  "description": "Digital platform for EU representation and unity",
+  "description": "EULens - See European Democracy Clearly",
   "main": "server/index.js",
   "type": "module",
   "scripts": {

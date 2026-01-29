@@ -51,30 +51,60 @@ async function fixIdentityDemocracy() {
 
     if (checkVotes.rows.length === 0 && checkMeps.rows.length === 0) {
       console.log('\n✅ No Identity and Democracy references found. Database is clean!');
+      
+      // Check if there are any "Patriots for Europe Group" that should be "Patriots for Europe"
+      const checkWrongPfE = await pool.query(`
+        SELECT DISTINCT mep_group, COUNT(*) as count
+        FROM votes
+        WHERE mep_group = 'Patriots for Europe Group'
+        GROUP BY mep_group
+      `);
+      
+      if (checkWrongPfE.rows.length > 0) {
+        console.log('\n🔧 Fixing "Patriots for Europe Group" to "Patriots for Europe"...');
+        const fixPfE = await pool.query(`
+          UPDATE votes
+          SET mep_group = 'Patriots for Europe'
+          WHERE mep_group = 'Patriots for Europe Group'
+        `);
+        console.log(`✅ Updated ${fixPfE.rowCount} votes to correct name`);
+      }
+      
       await pool.end();
       return;
     }
 
     // Update votes table - map ID to PfE (Patriots for Europe)
-    // This is the main replacement group for ID
+    // Check what the actual name is in the database first
+    const checkPfE = await pool.query(`
+      SELECT DISTINCT mep_group 
+      FROM votes 
+      WHERE LOWER(mep_group) LIKE '%patriot%' 
+      LIMIT 1
+    `);
+    
+    const pfeName = checkPfE.rows.length > 0 ? checkPfE.rows[0].mep_group : 'Patriots for Europe';
+    console.log(`\nUsing group name: "${pfeName}"`);
+
+    // Update votes table
     const updateVotes = await pool.query(`
       UPDATE votes
-      SET mep_group = 'Patriots for Europe Group'
+      SET mep_group = $1
       WHERE LOWER(mep_group) LIKE '%identity%' 
         AND LOWER(mep_group) LIKE '%democracy%'
-    `);
+    `, [pfeName]);
 
-    console.log(`\n✅ Updated ${updateVotes.rowCount} votes from ID to Patriots for Europe`);
+    console.log(`✅ Updated ${updateVotes.rowCount} votes from ID to ${pfeName}`);
 
     // Update meps table
     const updateMeps = await pool.query(`
       UPDATE meps
-      SET political_group = 'Patriots for Europe Group'
+      SET political_group = $1
       WHERE LOWER(political_group) LIKE '%identity%' 
         AND LOWER(political_group) LIKE '%democracy%'
-    `);
+    `, [pfeName]);
 
-    console.log(`✅ Updated ${updateMeps.rowCount} MEPs from ID to Patriots for Europe`);
+    console.log(`✅ Updated ${updateMeps.rowCount} MEPs from ID to ${pfeName}`);
 
     // Verify the fix
     const verifyVotes = await pool.query(`
@@ -97,9 +127,11 @@ async function fixIdentityDemocracy() {
 
   } catch (error) {
     console.error('❌ Error fixing Identity and Democracy:', error);
-    process.exit(1);
+    throw error;
   } finally {
-    await pool.end();
+    if (pool && !pool.ended) {
+      await pool.end();
+    }
   }
 }
 

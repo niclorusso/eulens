@@ -39,7 +39,6 @@ function getShortName(name) {
   if (lower.includes('conservative') || lower.includes('ecr')) return 'ECR';
   if (lower.includes('patriot')) return 'PfE';
   if (lower.includes('sovereign') || lower.includes('esn')) return 'ESN';
-  if (lower.includes('identity') && lower.includes('democracy')) return 'ID';
   return 'NI';
 }
 

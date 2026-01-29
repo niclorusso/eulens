@@ -868,6 +868,9 @@ app.get('/api/stats/party-agreement', async (req, res) => {
           SUM(CASE WHEN g1.majority_vote = g2.majority_vote THEN 1 ELSE 0 END) as agreements
         FROM group_positions g1
         JOIN group_positions g2 ON g1.bill_id = g2.bill_id AND g1.mep_group < g2.mep_group
+        WHERE 
+          LOWER(g1.mep_group) NOT LIKE '%identity%democracy%'
+          AND LOWER(g2.mep_group) NOT LIKE '%identity%democracy%'
         GROUP BY g1.mep_group, g2.mep_group
         HAVING COUNT(*) >= 10
       )

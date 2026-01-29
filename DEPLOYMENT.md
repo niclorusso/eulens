@@ -2,6 +2,63 @@
 
 Deploy EULens (eulens.eu) to production on Vercel, Render, or your own server.
 
+## 🆓 Free Deployment Option (Recommended for Start)
+
+This setup uses 100% free tiers:
+
+- **Frontend**: Vercel (free, unlimited)
+- **Backend**: Render free tier (spins down after 15min inactivity) OR Railway free tier
+- **Database**: Supabase or Neon (free PostgreSQL)
+
+### Quick Free Setup
+
+1. **Frontend on Vercel** (Free Forever)
+   - Go to https://vercel.com
+   - Sign up with GitHub
+   - Import your repo: `niclorusso/eulens`
+   - Set root directory: `client/`
+   - Add custom domain: `eulens.eu`
+   - Deploy! ✅
+
+2. **Database on Supabase** (Free Tier)
+   - Go to https://supabase.com
+   - Create new project
+   - Get connection string from Settings → Database
+   - Run schema: Copy `server/schema.sql` and run in SQL Editor
+
+3. **Backend on Render** (Free Tier - spins down after inactivity)
+   - Go to https://render.com
+   - New → Web Service
+   - Connect GitHub repo: `niclorusso/eulens`
+   - Settings:
+     - **Build Command**: `npm install`
+     - **Start Command**: `node server/index.js`
+     - **Environment Variables**:
+       ```
+       DATABASE_URL=[your-supabase-connection-string]
+       NODE_ENV=production
+       PORT=10000
+       GEMINI_API_KEY=[your-key]
+       ```
+   - ⚠️ Note: Free tier spins down after 15min inactivity (first request will be slow)
+
+4. **Alternative: Railway** (Free Tier - $5 credit/month)
+   - Go to https://railway.app
+   - New Project → Deploy from GitHub
+   - Select repo: `niclorusso/eulens`
+   - Add PostgreSQL database
+   - Set environment variables
+   - Railway doesn't spin down like Render
+
+### Free Tier Limitations
+
+- **Render**: Spins down after 15min (cold start ~30s)
+- **Railway**: $5 free credit/month (~100 hours runtime)
+- **Vercel**: Unlimited, no spin-down
+- **Supabase**: 500MB database, 2GB bandwidth/month
+
+**Tip**: For production, consider upgrading Render ($7/month) to avoid spin-downs.
+
 ## DNS Configuration for eulens.eu
 
 ### For Vercel Deployment (Recommended)

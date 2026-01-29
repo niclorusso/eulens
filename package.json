@@ -14,7 +14,8 @@
     "migrate:summaries": "node scripts/migrateBillSummaries.js",
     "summarize": "node scripts/generateBillSummaries.js",
     "generate-vaa": "node scripts/generateVAAQuestions.js",
-    "order-vaa": "node scripts/calculateBillPCALoadings.js"
+    "order-vaa": "node scripts/calculateBillPCALoadings.js",
+    "fix-id": "node scripts/fixIdentityDemocracy.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",

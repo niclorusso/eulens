@@ -1090,7 +1090,9 @@ app.get('/api/stats/party-cohesion', async (req, res) => {
           vote,
           COUNT(*) as count
         FROM votes
-        WHERE vote IN ('yes', 'no', 'abstain') AND mep_group IS NOT NULL
+        WHERE vote IN ('yes', 'no', 'abstain') 
+          AND mep_group IS NOT NULL
+          AND LOWER(mep_group) NOT LIKE '%identity%democracy%'
         GROUP BY bill_id, mep_group, vote
       ),
       party_bill_stats AS (
@@ -1109,6 +1111,7 @@ app.get('/api/stats/party-cohesion', async (req, res) => {
         ROUND(AVG(majority_count::numeric / NULLIF(total_votes, 0) * 100), 1) as avg_cohesion,
         SUM(total_votes) as total_mep_votes
       FROM party_bill_stats
+      WHERE LOWER(mep_group) NOT LIKE '%identity%democracy%'
       GROUP BY mep_group
       HAVING COUNT(*) >= 10
       ORDER BY avg_cohesion DESC

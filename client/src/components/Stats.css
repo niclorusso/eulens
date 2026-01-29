@@ -258,6 +258,65 @@
   color: #dc2626;
 }
 
+/* Absence Rate Section */
+.absence-chart {
+  margin-bottom: 2rem;
+}
+
+.absence-table {
+  overflow-x: auto;
+}
+
+.absence-table table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.absence-table th,
+.absence-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.absence-table th {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #475569;
+  font-size: 0.875rem;
+}
+
+.absence-table td {
+  color: #334155;
+}
+
+.absence-value {
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.absence-value.very-low {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.absence-value.low {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.absence-value.medium {
+  background: #fed7aa;
+  color: #9a3412;
+}
+
+.absence-value.high {
+  background: #fecaca;
+  color: #991b1b;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .stats-overview {

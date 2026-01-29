@@ -1124,6 +1124,78 @@ app.get('/api/stats/party-cohesion', async (req, res) => {
   }
 });
 
+// Get party absence/non-participation rates
+app.get('/api/stats/party-absence', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      WITH bill_count AS (
+        SELECT COUNT(DISTINCT id) as total_bills FROM bills
+      ),
+      party_votes AS (
+        -- Count actual votes (yes, no, abstain) per party
+        SELECT
+          mep_group,
+          COUNT(*) as votes_cast,
+          COUNT(DISTINCT mep_id) as meps_who_voted,
+          COUNT(DISTINCT bill_id) as bills_participated
+        FROM votes
+        WHERE vote IN ('yes', 'no', 'abstain')
+          AND mep_group IS NOT NULL
+          AND LOWER(mep_group) NOT LIKE '%identity%democracy%'
+        GROUP BY mep_group
+      ),
+      party_absences AS (
+        -- Count did_not_vote per party
+        SELECT
+          mep_group,
+          COUNT(*) as absent_votes
+        FROM votes
+        WHERE vote = 'did_not_vote'
+          AND mep_group IS NOT NULL
+          AND LOWER(mep_group) NOT LIKE '%identity%democracy%'
+        GROUP BY mep_group
+      ),
+      party_meps AS (
+        -- Count MEPs per party from the meps table
+        SELECT
+          political_group as mep_group,
+          COUNT(*) as total_meps
+        FROM meps
+        WHERE political_group IS NOT NULL
+          AND LOWER(political_group) NOT LIKE '%identity%democracy%'
+        GROUP BY political_group
+      )
+      SELECT
+        pv.mep_group as political_group,
+        pm.total_meps,
+        pv.meps_who_voted as active_meps,
+        pv.bills_participated,
+        (SELECT total_bills FROM bill_count) as total_bills,
+        pv.votes_cast,
+        COALESCE(pa.absent_votes, 0) as absent_votes,
+        ROUND(
+          COALESCE(pa.absent_votes, 0)::numeric / 
+          NULLIF(pv.votes_cast + COALESCE(pa.absent_votes, 0), 0) * 100, 
+          1
+        ) as absence_rate,
+        ROUND(
+          pv.bills_participated::numeric / NULLIF((SELECT total_bills FROM bill_count), 0) * 100,
+          1
+        ) as participation_rate
+      FROM party_votes pv
+      LEFT JOIN party_absences pa ON pv.mep_group = pa.mep_group
+      LEFT JOIN party_meps pm ON pv.mep_group = pm.mep_group
+      WHERE LOWER(pv.mep_group) NOT LIKE '%identity%democracy%'
+      ORDER BY absence_rate DESC
+    `);
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching party absence:', error);
+    res.status(500).json({ error: 'Failed to fetch party absence data' });
+  }
+});
+
 // Get most/least controversial bills (closest vote margins)
 app.get('/api/stats/controversial', async (req, res) => {
   try {

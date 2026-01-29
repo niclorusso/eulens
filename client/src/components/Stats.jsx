@@ -30,6 +30,7 @@ export default function Stats() {
   const [overview, setOverview] = useState(null);
   const [partyAgreement, setPartyAgreement] = useState([]);
   const [partyCohesion, setPartyCohesion] = useState([]);
+  const [partyAbsence, setPartyAbsence] = useState([]);
   const [controversial, setControversial] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
@@ -41,16 +42,18 @@ export default function Stats() {
   async function fetchStats() {
     try {
       setLoading(true);
-      const [overviewRes, agreementRes, cohesionRes, controversialRes] = await Promise.all([
+      const [overviewRes, agreementRes, cohesionRes, absenceRes, controversialRes] = await Promise.all([
         axios.get('/api/stats/overview'),
         axios.get('/api/stats/party-agreement'),
         axios.get('/api/stats/party-cohesion'),
+        axios.get('/api/stats/party-absence'),
         axios.get('/api/stats/controversial')
       ]);
 
       setOverview(overviewRes.data);
       setPartyAgreement(agreementRes.data);
       setPartyCohesion(cohesionRes.data);
+      setPartyAbsence(absenceRes.data);
       setControversial(controversialRes.data);
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -120,6 +123,12 @@ export default function Stats() {
           onClick={() => setActiveTab('cohesion')}
         >
           Party Cohesion
+        </button>
+        <button
+          className={`tab ${activeTab === 'absence' ? 'active' : ''}`}
+          onClick={() => setActiveTab('absence')}
+        >
+          Absence Rate
         </button>
         <button
           className={`tab ${activeTab === 'controversial' ? 'active' : ''}`}
@@ -263,6 +272,84 @@ export default function Stats() {
                       <td className="cohesion-value">{group.avg_cohesion}%</td>
                       <td>{group.bills_voted}</td>
                       <td>{parseInt(group.total_mep_votes).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
+
+        {activeTab === 'absence' && (
+          <section className="card">
+            <h2>Absence Rate by Party</h2>
+            <p className="section-description">
+              How often do MEPs from each political group miss votes? Lower absence rates
+              indicate more active participation in plenary sessions.
+            </p>
+            <div className="absence-chart">
+              <ResponsiveContainer width="100%" height={400}>
+                <BarChart data={partyAbsence} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" domain={[0, 'auto']} unit="%" />
+                  <YAxis
+                    dataKey="political_group"
+                    type="category"
+                    width={100}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <Tooltip
+                    formatter={(value, name) => {
+                      if (name === 'Absence Rate') return `${value}%`;
+                      return value;
+                    }}
+                    labelFormatter={(label) => label}
+                  />
+                  <Bar dataKey="absence_rate" name="Absence Rate">
+                    {partyAbsence.map((entry, index) => {
+                      const shortName = Object.keys(GROUP_COLORS).find(k =>
+                        entry.political_group?.includes(k)
+                      );
+                      // Use red tones for higher absence rates
+                      const absenceColor = entry.absence_rate > 15 ? '#ef4444' : 
+                                          entry.absence_rate > 10 ? '#f97316' : 
+                                          entry.absence_rate > 5 ? '#eab308' : '#22c55e';
+                      return (
+                        <Cell
+                          key={entry.political_group}
+                          fill={absenceColor}
+                        />
+                      );
+                    })}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="absence-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Political Group</th>
+                    <th>Absence Rate</th>
+                    <th>Active MEPs</th>
+                    <th>Votes Cast</th>
+                    <th>Absent Votes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {partyAbsence.map(group => (
+                    <tr key={group.political_group}>
+                      <td>{group.political_group}</td>
+                      <td className={`absence-value ${
+                        parseFloat(group.absence_rate) > 15 ? 'high' : 
+                        parseFloat(group.absence_rate) > 10 ? 'medium' : 
+                        parseFloat(group.absence_rate) > 5 ? 'low' : 'very-low'
+                      }`}>
+                        {group.absence_rate}%
+                      </td>
+                      <td>{group.active_meps}</td>
+                      <td>{parseInt(group.votes_cast).toLocaleString()}</td>
+                      <td>{parseInt(group.absent_votes).toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>

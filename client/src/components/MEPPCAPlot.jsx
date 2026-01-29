@@ -9,15 +9,15 @@ const Plot = lazy(() => import('react-plotly.js'));
 
 // Political group colors (using full names from database)
 const GROUP_COLORS = {
-  "European People's Party": '#3399FF',
+  "European People's Party": '#0066CC',
   'Progressive Alliance of Socialists and Democrats': '#E02027',
   'Renew Europe': '#FFD700',
   'Greens/European Free Alliance': '#009E47',
   'European Conservatives and Reformists': '#0099CC',
   'The Left in the European Parliament': '#8B0000',
-  'Patriots for Europe': '#002244',
-  'Europe of Sovereign Nations': '#4A4A4A',
-  'Non-attached Members': '#808080'
+  'Patriots for Europe': '#1a3a5c',
+  'Europe of Sovereign Nations': '#5c3d2e',
+  'Non-attached Members': '#999999'
 };
 
 // Short names for display

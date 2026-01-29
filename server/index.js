@@ -1928,10 +1928,16 @@ Recent topics in the European Parliament include: ${recentVotes.rows.map(v => v.
 
     res.json({ response: text });
   } catch (error) {
-    console.error('Chat error:', error);
+    console.error('Chat error:', error.message);
+    console.error('Chat error details:', JSON.stringify({
+      name: error.name,
+      message: error.message,
+      stack: error.stack?.split('\n').slice(0, 3)
+    }));
     res.status(500).json({ 
       error: 'Chat failed',
-      response: 'I apologize, but I\'m having trouble responding right now. Please try again in a moment.'
+      response: 'I apologize, but I\'m having trouble responding right now. Please try again in a moment.',
+      debug: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });

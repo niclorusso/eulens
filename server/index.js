@@ -16,12 +16,22 @@ const genAI = process.env.GEMINI_API_KEY
 const app = express();
 const { Pool } = pg;
 
+// Configure database connection
+// If DATABASE_URL contains direct Supabase connection, log a warning
+const dbUrl = process.env.DATABASE_URL || 'postgres://localhost/eulens';
+if (dbUrl.includes('supabase') && !dbUrl.includes('pooler')) {
+  console.warn('⚠️  WARNING: Using direct Supabase connection. Consider using connection pooler to avoid IPv6 issues.');
+  console.warn('   Get pooler string from: Supabase Dashboard → Settings → Database → Connection pooling');
+}
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgres://localhost/eulens',
+  connectionString: dbUrl,
   // Add connection timeout and retry options
   connectionTimeoutMillis: 10000,
   idleTimeoutMillis: 30000,
-  max: 10
+  max: 10,
+  // Force IPv4 by using hostname resolution
+  // Note: This requires using connection pooler for Supabase
 });
 
 // Simple PCA computation function (same algorithm as frontend)

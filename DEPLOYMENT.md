@@ -6,19 +6,39 @@ Deploy EULens (eulens.eu) to production on Vercel, Render, or your own server.
 
 This setup uses 100% free tiers:
 
-- **Frontend**: Vercel (free, unlimited)
+- **Frontend**: Vercel OR Netlify (both free, unlimited)
 - **Backend**: Render free tier (spins down after 15min inactivity) OR Railway free tier
 - **Database**: Supabase or Neon (free PostgreSQL)
 
 ### Quick Free Setup
 
-1. **Frontend on Vercel** (Free Forever)
+**Option A: Frontend on Vercel** (Free Forever)
    - Go to https://vercel.com
    - Sign up with GitHub
    - Import your repo: `niclorusso/eulens`
    - Set root directory: `client/`
    - Add custom domain: `eulens.eu`
    - Deploy! ✅
+
+**Option B: Frontend on Netlify** (Free Forever - Great Alternative!)
+   - Go to https://netlify.com
+   - Sign up with GitHub
+   - Add new site → Import from Git
+   - Select repo: `niclorusso/eulens`
+   - Build settings:
+     - **Base directory**: `client`
+     - **Build command**: `npm run build`
+     - **Publish directory**: `client/dist`
+   - Add custom domain: `eulens.eu`
+   - Deploy! ✅
+
+**Netlify vs Vercel:**
+- Both are excellent and free
+- Netlify has slightly better free tier limits (100GB bandwidth vs 100GB on Vercel)
+- Vercel has better Next.js integration (not needed here)
+- Netlify has Netlify Functions (could host some API endpoints, but limited to 10s execution on free tier)
+- Both support custom domains and SSL
+- **Recommendation**: Either works great! Choose based on preference.
 
 2. **Database on Supabase** (Free Tier)
    - Go to https://supabase.com
@@ -61,7 +81,7 @@ This setup uses 100% free tiers:
 
 ## DNS Configuration for eulens.eu
 
-### For Vercel Deployment (Recommended)
+### For Vercel Deployment
 
 1. **In your domain registrar** (where you bought eulens.eu), add these DNS records:
 
@@ -85,6 +105,33 @@ This setup uses 100% free tiers:
    - Go to your project → Settings → Domains
    - Add `eulens.eu` and `www.eulens.eu`
    - Vercel will automatically provision SSL certificate
+
+3. **Wait for DNS propagation** (usually 5-30 minutes, can take up to 48 hours)
+
+### For Netlify Deployment
+
+1. **In your domain registrar**, add these DNS records:
+
+   **Option A: Using CNAME (Easiest)**
+   ```
+   Type: CNAME
+   Name: @ (or root)
+   Value: [your-site-name].netlify.app
+   TTL: 3600
+   ```
+
+   **Option B: Using A Records**
+   ```
+   Type: A
+   Name: @
+   Value: 75.2.60.5
+   TTL: 3600
+   ```
+
+2. **In Netlify Dashboard:**
+   - Go to Site settings → Domain management
+   - Add custom domain: `eulens.eu`
+   - Netlify will automatically provision SSL certificate (Let's Encrypt)
 
 3. **Wait for DNS propagation** (usually 5-30 minutes, can take up to 48 hours)
 

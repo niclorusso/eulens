@@ -19,33 +19,80 @@ const projectRoot = path.join(__dirname, '..');
 
 let isUpdateRunning = false;
 
-function runUpdateScript() {
+function runScript(scriptPath, scriptName) {
+  return new Promise((resolve, reject) => {
+    const process = spawn('node', [scriptPath], {
+      cwd: projectRoot,
+      stdio: 'inherit'
+    });
+
+    process.on('close', (code) => {
+      if (code === 0) {
+        console.log(`[Scheduler] ${scriptName} completed successfully`);
+        resolve();
+      } else {
+        console.error(`[Scheduler] ${scriptName} failed with code ${code}`);
+        reject(new Error(`${scriptName} failed with code ${code}`));
+      }
+    });
+
+    process.on('error', (err) => {
+      console.error(`[Scheduler] Failed to start ${scriptName}:`, err);
+      reject(err);
+    });
+  });
+}
+
+async function runUpdateScript() {
   if (isUpdateRunning) {
     console.log('[Scheduler] Update already in progress, skipping...');
     return;
   }
 
-  console.log('[Scheduler] Starting data update...');
+  console.log('[Scheduler] Starting weekly data update...');
   isUpdateRunning = true;
 
-  const updateProcess = spawn('node', ['scripts/updateData.js'], {
-    cwd: projectRoot,
-    stdio: 'inherit'
-  });
+  try {
+    // Step 1: Update data from API
+    console.log('[Scheduler] Step 1: Fetching new votes and bills...');
+    await runScript('scripts/updateData.js', 'Data Update');
 
-  updateProcess.on('close', (code) => {
-    isUpdateRunning = false;
-    if (code === 0) {
-      console.log('[Scheduler] Data update completed successfully');
-    } else {
-      console.error(`[Scheduler] Data update failed with code ${code}`);
+    // Step 2: Generate summaries for new bills (if enabled)
+    if (process.env.GENERATE_SUMMARIES !== 'false') {
+      console.log('[Scheduler] Step 2: Generating bill summaries...');
+      try {
+        await runScript('scripts/generateBillSummaries.js', 'Bill Summaries');
+      } catch (err) {
+        console.warn('[Scheduler] Bill summaries generation failed, continuing...');
+      }
     }
-  });
 
-  updateProcess.on('error', (err) => {
+    // Step 3: Generate VAA questions (if enabled)
+    if (process.env.GENERATE_VAA !== 'false') {
+      console.log('[Scheduler] Step 3: Generating VAA questions...');
+      try {
+        await runScript('scripts/generateVAAQuestions.js', 'VAA Questions');
+      } catch (err) {
+        console.warn('[Scheduler] VAA questions generation failed, continuing...');
+      }
+    }
+
+    // Step 4: Update PCA loadings for VAA ordering (if enabled)
+    if (process.env.UPDATE_PCA_LOADINGS !== 'false') {
+      console.log('[Scheduler] Step 4: Updating PCA loadings...');
+      try {
+        await runScript('scripts/calculateBillPCALoadings.js', 'PCA Loadings');
+      } catch (err) {
+        console.warn('[Scheduler] PCA loadings update failed, continuing...');
+      }
+    }
+
+    console.log('[Scheduler] Weekly update completed successfully!');
+  } catch (error) {
+    console.error('[Scheduler] Update process failed:', error);
+  } finally {
     isUpdateRunning = false;
-    console.error('[Scheduler] Failed to start update process:', err);
-  });
+  }
 }
 
 /**

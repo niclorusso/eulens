@@ -1627,8 +1627,9 @@ app.listen(PORT, () => {
   console.log(`EULens backend running on port ${PORT}`);
 
   // Initialize scheduler for automatic weekly data updates
-  // Set ENABLE_SCHEDULER=true in .env to enable automatic updates
-  if (process.env.ENABLE_SCHEDULER === 'true') {
+  // Runs every Sunday at 3:00 AM by default
+  // Set ENABLE_SCHEDULER=false in .env to disable automatic updates
+  if (process.env.ENABLE_SCHEDULER !== 'false') {
     initScheduler({
       schedule: process.env.UPDATE_SCHEDULE || '0 3 * * 0', // Default: Sundays at 3am
       runOnStart: process.env.UPDATE_ON_START === 'true'

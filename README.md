@@ -134,6 +134,51 @@ This starts:
 - Backend API on http://localhost:5001
 - Frontend on http://localhost:5173 (Vite default)
 
+## Automatic Weekly Updates
+
+EULens automatically fetches new data from the HowTheyVote.eu API every week (Sundays at 3:00 AM by default). The scheduler:
+
+1. **Fetches new votes and bills** from the API
+2. **Updates MEP information** (new members, group changes)
+3. **Generates AI summaries** for new bills (if `GENERATE_SUMMARIES=true`)
+4. **Creates VAA questions** for new bills (if `GENERATE_VAA=true`)
+5. **Updates PCA loadings** for VAA ordering (if `UPDATE_PCA_LOADINGS=true`)
+
+### Configuration
+
+The scheduler is **enabled by default**. Configure it in your `.env` file:
+
+```bash
+# Disable automatic updates
+ENABLE_SCHEDULER=false
+
+# Change update schedule (cron expression)
+UPDATE_SCHEDULE=0 3 * * 0  # Default: Sundays at 3:00 AM
+
+# Run update on server startup
+UPDATE_ON_START=true
+
+# Control which steps run after data update
+GENERATE_SUMMARIES=true
+GENERATE_VAA=true
+UPDATE_PCA_LOADINGS=true
+```
+
+### Manual Updates
+
+You can also run updates manually:
+
+```bash
+# Update data only
+npm run update-data
+
+# Full update with summaries and VAA
+npm run update-data
+npm run summarize
+npm run generate-vaa
+npm run order-vaa
+```
+
 ## Project Structure
 
 ```

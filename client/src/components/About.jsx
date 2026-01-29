@@ -20,9 +20,9 @@ export default function About() {
             of people across the European Union.
           </p>
           <p>
-            Like a lens that brings distant objects into focus, EULens helps you see clearly 
-            how your representatives are shaping European policy—cutting through complexity 
-            to reveal the voting patterns that matter.
+            EULens provides tools to analyze how your representatives vote on European policy. 
+            You can explore voting patterns, compare MEPs and political groups, and understand 
+            how decisions are made in the European Parliament.
           </p>
         </section>
 

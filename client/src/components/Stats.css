@@ -29,21 +29,12 @@
   border: 1px solid var(--border);
 }
 
-.stat-card.adopted {
-  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-  border-color: var(--success);
-}
-
 .stat-value {
   font-size: 2.5rem;
   font-weight: 700;
   color: var(--primary);
   line-height: 1;
   margin-bottom: 0.5rem;
-}
-
-.stat-card.adopted .stat-value {
-  color: var(--success);
 }
 
 .stat-label {

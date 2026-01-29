@@ -328,7 +328,7 @@ export default function MEPPCAPlot() {
       const shortName = GROUP_SHORT_NAMES[data.group] || data.group || 'Non-attached';
       return (
         <div className="pca-tooltip">
-          <strong>{data.name}</strong>
+          <strong style={{ color: '#1e293b' }}>{data.name}</strong>
           <div className="pca-tooltip-group" style={{ color: data.color }}>
             {shortName}
           </div>

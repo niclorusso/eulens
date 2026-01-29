@@ -89,7 +89,7 @@ export default function Stats() {
             <div className="stat-value">{overview.totalBills}</div>
             <div className="stat-label">Total Votes</div>
           </div>
-          <div className="stat-card adopted">
+          <div className="stat-card">
             <div className="stat-value">{overview.adoptionRate}%</div>
             <div className="stat-label">Adoption Rate</div>
           </div>

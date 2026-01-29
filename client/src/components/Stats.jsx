@@ -293,9 +293,8 @@ export default function Stats() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis 
                     type="number" 
-                    domain={[0, dataMax => Math.ceil(dataMax + 2)]} 
-                    unit="%" 
-                    allowDataOverflow={false}
+                    domain={[0, 20]} 
+                    unit="%"
                   />
                   <YAxis
                     dataKey="political_group"

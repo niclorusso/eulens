@@ -62,24 +62,22 @@ export default function PartyAgreementMatrix({ data }) {
   const { matrix, groups } = useMemo(() => {
     if (!data || data.length === 0) return { matrix: {}, groups: [] };
 
-    // Collect all unique groups, filtering out Identity and Democracy
+    // Collect all unique groups, filtering out Identity and Democracy (dissolved in 10th legislature)
     const groupSet = new Set();
     data.forEach(row => {
-      const g1 = getShortName(row.group1);
-      const g2 = getShortName(row.group2);
-      // Filter out ID (Identity and Democracy) - doesn't exist in 10th legislature
       const lower1 = (row.group1 || '').toLowerCase();
       const lower2 = (row.group2 || '').toLowerCase();
-      if (!lower1.includes('identity') || !lower1.includes('democracy')) {
-        if (g1 !== 'ID' && !g1.toLowerCase().includes('identity')) {
-          groupSet.add(g1);
-        }
-      }
-      if (!lower2.includes('identity') || !lower2.includes('democracy')) {
-        if (g2 !== 'ID' && !g2.toLowerCase().includes('identity')) {
-          groupSet.add(g2);
-        }
-      }
+      
+      // Skip Identity and Democracy groups
+      if (lower1.includes('identity') && lower1.includes('democracy')) return;
+      if (lower2.includes('identity') && lower2.includes('democracy')) return;
+      
+      const g1 = getShortName(row.group1);
+      const g2 = getShortName(row.group2);
+      
+      // Double check short names
+      if (g1 !== 'ID' && !g1.toLowerCase().includes('identity')) groupSet.add(g1);
+      if (g2 !== 'ID' && !g2.toLowerCase().includes('identity')) groupSet.add(g2);
     });
 
     // Sort groups by political spectrum order

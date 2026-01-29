@@ -9,3 +9,13 @@ build/
 .idea/
 client/node_modules/
 server/node_modules/
+
+# iOS - Capacitor
+client/ios/App/Pods/
+client/ios/App/App.xcworkspace/xcuserdata/
+client/ios/App/App.xcodeproj/xcuserdata/
+client/ios/App/App/public/
+client/ios/App/App/capacitor.config.json
+client/ios/App/App/config.xml
+client/ios/capacitor-cordova-ios-plugins/
+.claude/

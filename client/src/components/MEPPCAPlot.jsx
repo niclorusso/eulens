@@ -436,15 +436,15 @@ export default function MEPPCAPlot() {
                 ) : (
                   <>
                     <ZAxis type="number" dataKey="count" range={[400, 4000]} />
-                    {/* Standard deviation ellipses */}
+                    {/* Standard deviation ellipses - rendered first so they appear behind bubbles */}
                     <Customized
-                      component={({ xAxisMap, yAxisMap }) => {
+                      component={({ xAxisMap, yAxisMap, width, height }) => {
                         const xAxis = xAxisMap && Object.values(xAxisMap)[0];
                         const yAxis = yAxisMap && Object.values(yAxisMap)[0];
                         if (!xAxis || !yAxis) return null;
                         
                         return (
-                          <g>
+                          <g style={{ clipPath: 'none', overflow: 'visible' }}>
                             {groupData.map((g, i) => {
                               const cx = xAxis.scale(g.x);
                               const cy = yAxis.scale(g.y);
@@ -452,19 +452,22 @@ export default function MEPPCAPlot() {
                               const rx = Math.abs(xAxis.scale(g.x + g.stdX) - cx);
                               const ry = Math.abs(yAxis.scale(g.y + g.stdY) - cy);
                               
+                              // Skip if values are invalid
+                              if (isNaN(cx) || isNaN(cy) || isNaN(rx) || isNaN(ry)) return null;
+                              
                               return (
                                 <ellipse
                                   key={`ellipse-${i}`}
                                   cx={cx}
                                   cy={cy}
-                                  rx={rx}
-                                  ry={ry}
+                                  rx={Math.max(rx, 5)}
+                                  ry={Math.max(ry, 5)}
                                   fill={g.color}
-                                  fillOpacity={0.15}
+                                  fillOpacity={0.2}
                                   stroke={g.color}
-                                  strokeWidth={1}
-                                  strokeOpacity={0.4}
-                                  strokeDasharray="4 2"
+                                  strokeWidth={2}
+                                  strokeOpacity={0.5}
+                                  strokeDasharray="6 3"
                                 />
                               );
                             })}

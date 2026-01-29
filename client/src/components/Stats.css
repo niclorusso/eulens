@@ -284,28 +284,7 @@
 
 .absence-value {
   font-weight: 600;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-}
-
-.absence-value.very-low {
-  background: #dcfce7;
-  color: #166534;
-}
-
-.absence-value.low {
-  background: #fef9c3;
-  color: #854d0e;
-}
-
-.absence-value.medium {
-  background: #fed7aa;
-  color: #9a3412;
-}
-
-.absence-value.high {
-  background: #fecaca;
-  color: #991b1b;
+  color: #6366f1;
 }
 
 /* Responsive */

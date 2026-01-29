@@ -291,7 +291,12 @@ export default function Stats() {
               <ResponsiveContainer width="100%" height={400}>
                 <BarChart data={partyAbsence} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" domain={[0, 'auto']} unit="%" />
+                  <XAxis 
+                    type="number" 
+                    domain={[0, dataMax => Math.ceil(dataMax + 2)]} 
+                    unit="%" 
+                    allowDataOverflow={false}
+                  />
                   <YAxis
                     dataKey="political_group"
                     type="category"
@@ -305,23 +310,7 @@ export default function Stats() {
                     }}
                     labelFormatter={(label) => label}
                   />
-                  <Bar dataKey="absence_rate" name="Absence Rate">
-                    {partyAbsence.map((entry, index) => {
-                      const shortName = Object.keys(GROUP_COLORS).find(k =>
-                        entry.political_group?.includes(k)
-                      );
-                      // Use red tones for higher absence rates
-                      const absenceColor = entry.absence_rate > 15 ? '#ef4444' : 
-                                          entry.absence_rate > 10 ? '#f97316' : 
-                                          entry.absence_rate > 5 ? '#eab308' : '#22c55e';
-                      return (
-                        <Cell
-                          key={entry.political_group}
-                          fill={absenceColor}
-                        />
-                      );
-                    })}
-                  </Bar>
+                  <Bar dataKey="absence_rate" name="Absence Rate" fill="#6366f1" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -340,13 +329,7 @@ export default function Stats() {
                   {partyAbsence.map(group => (
                     <tr key={group.political_group}>
                       <td>{group.political_group}</td>
-                      <td className={`absence-value ${
-                        parseFloat(group.absence_rate) > 15 ? 'high' : 
-                        parseFloat(group.absence_rate) > 10 ? 'medium' : 
-                        parseFloat(group.absence_rate) > 5 ? 'low' : 'very-low'
-                      }`}>
-                        {group.absence_rate}%
-                      </td>
+                      <td className="absence-value">{group.absence_rate}%</td>
                       <td>{group.active_meps}</td>
                       <td>{parseInt(group.votes_cast).toLocaleString()}</td>
                       <td>{parseInt(group.absent_votes).toLocaleString()}</td>

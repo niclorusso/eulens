@@ -48,30 +48,136 @@ export default function MEPPCAPlot() {
   async function fetchData() {
     try {
       setLoading(true);
-      // Use pre-computed coordinates - much faster!
+      // Try pre-computed coordinates first (much faster!)
       const res = await axios.get('/api/stats/mep-pca-coords');
-      setPcaData(res.data);
+      
+      // Check if we have valid data
+      if (res.data && res.data.meps && res.data.meps.length > 0) {
+        setPcaData(res.data);
+      } else {
+        // Fallback: compute on the fly if no precomputed data
+        console.log('No precomputed PCA data, falling back to live computation...');
+        const fallbackRes = await axios.get('/api/stats/mep-voting-vectors', {
+          params: { minVotes: 20 }
+        });
+        setPcaData({ fallback: true, ...fallbackRes.data });
+      }
     } catch (err) {
       console.error('Error fetching MEP PCA data:', err);
-      setError('Failed to load MEP PCA data');
+      // Try fallback endpoint
+      try {
+        console.log('Trying fallback endpoint...');
+        const fallbackRes = await axios.get('/api/stats/mep-voting-vectors', {
+          params: { minVotes: 20 }
+        });
+        setPcaData({ fallback: true, ...fallbackRes.data });
+      } catch (fallbackErr) {
+        console.error('Fallback also failed:', fallbackErr);
+        setError('Failed to load MEP PCA data');
+      }
     } finally {
       setLoading(false);
     }
   }
 
-  // Transform pre-computed data into points for visualization
-  const pcaPoints = useMemo(() => {
-    if (!pcaData || !pcaData.meps || pcaData.meps.length === 0) return [];
+  // Simple PCA implementation for fallback
+  function computePCAFallback(data, numComponents = 3) {
+    const n = data.length;
+    if (n === 0) return { projections: [], variance: [] };
+    const m = data[0].length;
     
-    return pcaData.meps.map(mep => ({
-      mep_id: mep.mepId,
-      name: mep.name,
-      group: mep.group,
-      x: mep.x,
-      y: mep.y,
-      z: mep.z || 0,
-      color: GROUP_COLORS[mep.group] || '#808080'
-    }));
+    const means = new Array(m).fill(0);
+    for (let j = 0; j < m; j++) {
+      for (let i = 0; i < n; i++) means[j] += data[i][j];
+      means[j] /= n;
+    }
+    
+    const centered = data.map(row => row.map((val, j) => val - means[j]));
+    const components = [];
+    const variances = [];
+    let currentData = centered.map(row => [...row]);
+    
+    for (let comp = 0; comp < numComponents; comp++) {
+      let pc = new Array(m).fill(1);
+      let norm = Math.sqrt(pc.reduce((sum, v) => sum + v * v, 0));
+      pc = pc.map(v => v / norm);
+      
+      for (let iter = 0; iter < 100; iter++) {
+        const xpc = currentData.map(row => row.reduce((sum, v, j) => sum + v * pc[j], 0));
+        const newPc = new Array(m).fill(0);
+        for (let j = 0; j < m; j++) {
+          for (let i = 0; i < n; i++) newPc[j] += currentData[i][j] * xpc[i];
+        }
+        norm = Math.sqrt(newPc.reduce((sum, v) => sum + v * v, 0));
+        if (norm < 1e-10) break;
+        pc = newPc.map(v => v / norm);
+      }
+      
+      const sum = pc.reduce((a, b) => a + b, 0);
+      if (sum > 0) pc = pc.map(v => -v);
+      
+      components.push(pc);
+      const projections = currentData.map(row => row.reduce((sum, v, j) => sum + v * pc[j], 0));
+      variances.push(projections.reduce((sum, v) => sum + v * v, 0) / n);
+      
+      for (let i = 0; i < n; i++) {
+        const proj = projections[i];
+        for (let j = 0; j < m; j++) currentData[i][j] -= proj * pc[j];
+      }
+    }
+    
+    const finalProjections = centered.map(row => 
+      components.map(pc => row.reduce((sum, v, j) => sum + v * pc[j], 0))
+    );
+    return { projections: finalProjections, variance: variances };
+  }
+
+  // Transform data into points for visualization
+  const pcaPoints = useMemo(() => {
+    if (!pcaData) return [];
+    
+    // Pre-computed data path
+    if (!pcaData.fallback && pcaData.meps && pcaData.meps.length > 0) {
+      return pcaData.meps.map(mep => ({
+        mep_id: mep.mepId,
+        name: mep.name,
+        group: mep.group,
+        x: mep.x,
+        y: mep.y,
+        z: mep.z || 0,
+        color: GROUP_COLORS[mep.group] || '#808080'
+      }));
+    }
+    
+    // Fallback: compute PCA on the fly
+    if (pcaData.fallback && pcaData.meps && pcaData.billIds) {
+      const { meps, billIds } = pcaData;
+      const billIdToIndex = {};
+      billIds.forEach((id, idx) => { billIdToIndex[id] = idx; });
+      
+      const matrix = meps.map(mep => {
+        const row = new Array(billIds.length).fill(0);
+        mep.votes.forEach(v => {
+          const idx = billIdToIndex[v.bill_id];
+          if (idx !== undefined) row[idx] = v.vote;
+        });
+        return row;
+      });
+      
+      const { projections } = computePCAFallback(matrix, 3);
+      
+      return meps.map((mep, i) => ({
+        mep_id: mep.mep_id,
+        name: mep.mep_name,
+        group: mep.mep_group,
+        x: projections[i][0],
+        y: projections[i][1],
+        z: projections[i][2] || 0,
+        color: GROUP_COLORS[mep.mep_group] || '#808080'
+      }));
+    }
+    
+    return [];
   }, [pcaData]);
 
   // Get variance explained from pre-computed data

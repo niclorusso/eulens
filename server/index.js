@@ -1911,19 +1911,13 @@ app.post('/api/admin/scrape', async (req, res) => {
 
     scraper.on('close', (code) => {
       if (code === 0) {
-        console.log('[Admin] Scraper completed successfully');
-        res.json({ 
-          success: true, 
-          message: 'Scraper completed successfully',
-          output: output.split('\n').slice(-50).join('\n') // Last 50 lines
-        });
+        console.log('[Admin] ✅ Scraper completed successfully');
+        console.log('[Admin] Last 20 lines of output:');
+        console.log(output.split('\n').slice(-20).join('\n'));
       } else {
-        console.error(`[Admin] Scraper failed with code ${code}`);
-        res.status(500).json({ 
-          success: false, 
-          error: `Scraper failed with code ${code}`,
-          output: output.split('\n').slice(-50).join('\n')
-        });
+        console.error(`[Admin] ❌ Scraper failed with code ${code}`);
+        console.error('[Admin] Error output:');
+        console.error(output.split('\n').slice(-20).join('\n'));
       }
     });
 
@@ -1932,7 +1926,7 @@ app.post('/api/admin/scrape', async (req, res) => {
       success: true, 
       message: 'Scraper started in background',
       note: 'This may take 10-30 minutes. Check Render logs for progress.',
-      tip: 'You can monitor progress in Render dashboard → Logs'
+      tip: 'Monitor progress in Render dashboard → Logs'
     });
 
   } catch (error) {

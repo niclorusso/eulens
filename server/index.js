@@ -17,7 +17,11 @@ const app = express();
 const { Pool } = pg;
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgres://localhost/eulens'
+  connectionString: process.env.DATABASE_URL || 'postgres://localhost/eulens',
+  // Add connection timeout and retry options
+  connectionTimeoutMillis: 10000,
+  idleTimeoutMillis: 30000,
+  max: 10
 });
 
 // Simple PCA computation function (same algorithm as frontend)

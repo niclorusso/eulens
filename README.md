@@ -270,7 +270,7 @@ MIT License - See LICENSE file
 Questions? Ideas? Want to contribute?
 
 - 📧 Email: nic.lorusso@icloud.com
-- 💼 LinkedIn: [Nicola Lo Russo](https://www.linkedin.com/in/nicola-lo-russo)
+- 💼 LinkedIn: [Nicola Lo Russo](https://www.linkedin.com/in/nicola-lo-russo-7a4849127/)
 - 💬 GitHub Issues: Report bugs and suggest features
 
 ---

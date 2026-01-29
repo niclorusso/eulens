@@ -94,10 +94,12 @@ export default function MEPsList({ embedded = false }) {
     );
   }
 
-  const genderData = stats ? [
-    { name: 'Male', value: stats.genderRatio.counts.male, color: '#3b82f6' },
-    { name: 'Female', value: stats.genderRatio.counts.female, color: '#ec4899' }
-  ] : [];
+  // Hardcoded gender distribution (EP 10th legislature official stats)
+  const genderData = [
+    { name: 'Male', value: 439, color: '#3b82f6' },
+    { name: 'Female', value: 281, color: '#ec4899' }
+  ];
+  const genderStats = { male: 61, female: 39, counts: { male: 439, female: 281 } };
 
   return (
     <main className="container">
@@ -136,12 +138,12 @@ export default function MEPsList({ embedded = false }) {
                 </div>
                 <div className="stat-numbers">
                   <div className="stat-number">
-                    <span className="stat-value">{stats.genderRatio.counts.male}</span>
-                    <span className="stat-label">Male ({stats.genderRatio.male}%)</span>
+                    <span className="stat-value">{genderStats.counts.male}</span>
+                    <span className="stat-label">Male ({genderStats.male}%)</span>
                   </div>
                   <div className="stat-number">
-                    <span className="stat-value">{stats.genderRatio.counts.female}</span>
-                    <span className="stat-label">Female ({stats.genderRatio.female}%)</span>
+                    <span className="stat-value">{genderStats.counts.female}</span>
+                    <span className="stat-label">Female ({genderStats.female}%)</span>
                   </div>
                 </div>
               </div>

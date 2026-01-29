@@ -563,7 +563,7 @@ app.get('/api/countries', async (req, res) => {
         FROM countries c
         LEFT JOIN meps m ON c.code = m.country_code AND m.is_active = true
         LEFT JOIN votes v ON m.mep_id = v.mep_id AND v.vote IN ('yes', 'no', 'abstain')
-        WHERE c.code != 'GB' AND c.code != 'UK'  -- Exclude UK
+        WHERE c.code NOT IN ('GB', 'UK', 'GBR')  -- Exclude UK
         GROUP BY c.code, c.name
       ),
       -- Prefer countries with data (MEPs), then prefer 2-letter codes

@@ -1,6 +1,53 @@
-# Deployment Guide - Agora EU
+# Deployment Guide - EULens
 
-Deploy Agora EU to production on Vercel, Render, or your own server.
+Deploy EULens (eulens.eu) to production on Vercel, Render, or your own server.
+
+## DNS Configuration for eulens.eu
+
+### For Vercel Deployment (Recommended)
+
+1. **In your domain registrar** (where you bought eulens.eu), add these DNS records:
+
+   **Option A: Using CNAME (Easiest)**
+   ```
+   Type: CNAME
+   Name: @ (or root)
+   Value: cname.vercel-dns.com
+   TTL: 3600
+   ```
+
+   **Option B: Using A Records (If CNAME not supported)**
+   ```
+   Type: A
+   Name: @
+   Value: 76.76.21.21
+   TTL: 3600
+   ```
+
+2. **In Vercel Dashboard:**
+   - Go to your project → Settings → Domains
+   - Add `eulens.eu` and `www.eulens.eu`
+   - Vercel will automatically provision SSL certificate
+
+3. **Wait for DNS propagation** (usually 5-30 minutes, can take up to 48 hours)
+
+### For Self-Hosted Server
+
+If deploying on your own server, configure DNS:
+
+```
+Type: A
+Name: @
+Value: [YOUR_SERVER_IP]
+TTL: 3600
+
+Type: A
+Name: www
+Value: [YOUR_SERVER_IP]
+TTL: 3600
+```
+
+Then use Certbot (as shown in deployment steps) to get SSL certificate.
 
 ## Option 1: Deploy on Vercel + Render (Recommended)
 
@@ -8,7 +55,7 @@ Deploy Agora EU to production on Vercel, Render, or your own server.
 
 1. **Push to GitHub**
 ```bash
-git remote add origin https://github.com/YOUR_USERNAME/agora-eu.git
+git remote add origin https://github.com/niclorusso/eulens.git
 git push -u origin main
 ```
 
@@ -20,7 +67,8 @@ git push -u origin main
    - Deploy
 
 3. **Set environment variables in Vercel**
-   - Add `VITE_API_URL=https://your-api-domain.com`
+   - Add `VITE_API_URL=https://api.eulens.eu` (or your backend URL)
+   - Custom domain: Add `eulens.eu` in Vercel project settings
 
 ### Backend: Render
 
@@ -34,7 +82,7 @@ git push -u origin main
    - **Start**: `node server/index.js`
    - **Environment Variables**:
      ```
-     DATABASE_URL=postgres://[user]:[password]@[host]:5432/agora_eu
+     DATABASE_URL=postgres://[user]:[password]@[host]:5432/eulens
      NODE_ENV=production
      PORT=10000
      ```
@@ -81,7 +129,7 @@ services:
   db:
     image: postgres:15
     environment:
-      POSTGRES_DB: agora_eu
+      POSTGRES_DB: eulens
       POSTGRES_PASSWORD: your_password_here
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -92,7 +140,7 @@ services:
   app:
     build: .
     environment:
-      DATABASE_URL: postgres://postgres:your_password_here@db:5432/agora_eu
+      DATABASE_URL: postgres://postgres:your_password_here@db:5432/eulens
       NODE_ENV: production
       PORT: 5000
     ports:
@@ -126,14 +174,14 @@ sudo apt-get install -y nodejs postgresql postgresql-contrib
 
 2. **Create database**
 ```bash
-sudo -u postgres psql -c "CREATE DATABASE agora_eu;"
-psql -U postgres -d agora_eu < server/schema.sql
+sudo -u postgres psql -c "CREATE DATABASE eulens;"
+psql -U postgres -d eulens < server/schema.sql
 ```
 
 3. **Clone and install**
 ```bash
-git clone https://github.com/YOUR_USERNAME/agora-eu.git
-cd agora-eu
+git clone https://github.com/niclorusso/eulens.git
+cd eulens
 npm install
 cd client && npm install && cd ..
 npm run build
@@ -142,7 +190,7 @@ npm run build
 4. **Setup with PM2 (process manager)**
 ```bash
 npm install -g pm2
-pm2 start server/index.js --name "agora-eu"
+pm2 start server/index.js --name "eulens"
 pm2 startup
 pm2 save
 ```
@@ -151,10 +199,10 @@ pm2 save
 ```bash
 sudo apt-get install nginx
 
-# /etc/nginx/sites-available/agora-eu
+# /etc/nginx/sites-available/eulens
 server {
     listen 80;
-    server_name yourdomain.com;
+    server_name eulens.eu www.eulens.eu;
 
     location /api {
         proxy_pass http://localhost:5000;
@@ -166,7 +214,7 @@ server {
     }
 
     location / {
-        root /home/user/agora-eu/client/dist;
+        root /home/user/eulens/client/dist;
         try_files $uri $uri/ /index.html;
     }
 }
@@ -175,16 +223,16 @@ server {
 6. **SSL with Certbot**
 ```bash
 sudo apt-get install certbot python3-certbot-nginx
-sudo certbot --nginx -d yourdomain.com
+sudo certbot --nginx -d eulens.eu -d www.eulens.eu
 ```
 
 ## Environment Variables for Production
 
 ```
-DATABASE_URL=postgres://[user]:[password]@[host]/agora_eu
+DATABASE_URL=postgres://[user]:[password]@[host]/eulens
 NODE_ENV=production
 PORT=5000
-VITE_API_URL=https://api.yourdomain.com
+VITE_API_URL=https://api.eulens.eu
 ```
 
 ## Monitoring & Logs
@@ -195,13 +243,13 @@ VITE_API_URL=https://api.yourdomain.com
 ### On self-hosted
 ```bash
 # View logs
-pm2 logs agora-eu
+pm2 logs eulens
 
 # Monitor
 pm2 monit
 
 # Restart
-pm2 restart agora-eu
+pm2 restart eulens
 ```
 
 ## Database Backups
@@ -211,9 +259,9 @@ pm2 restart agora-eu
 
 ### PostgreSQL manual backup
 ```bash
-pg_dump agora_eu > backup.sql
+pg_dump eulens > backup.sql
 # Restore:
-psql agora_eu < backup.sql
+psql eulens < backup.sql
 ```
 
 ## Performance Tips

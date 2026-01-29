@@ -12,7 +12,7 @@ export default function Header() {
             <p className="tagline">See European Democracy Clearly</p>
           </Link>
           <nav className="nav">
-            <Link to="/" className="nav-link">Voting</Link>
+            <Link to="/" className="nav-link">Votes</Link>
             <Link to="/meps" className="nav-link">MEPs</Link>
             <Link to="/groups" className="nav-link">Groups</Link>
             <Link to="/countries" className="nav-link">Countries</Link>

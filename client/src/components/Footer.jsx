@@ -19,7 +19,7 @@ export default function Footer() {
           <div className="footer-links">
             <div className="footer-section">
               <h4>Explore</h4>
-              <Link to="/">Voting</Link>
+              <Link to="/">Votes</Link>
               <Link to="/meps">MEPs</Link>
               <Link to="/groups">Groups</Link>
               <Link to="/countries">Countries</Link>

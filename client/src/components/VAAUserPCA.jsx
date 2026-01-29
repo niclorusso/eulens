@@ -3,18 +3,83 @@ import axios from 'axios';
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import './VAAUserPCA.css';
 
-// Political group colors (using full names from database)
 const GROUP_COLORS = {
-  "European People's Party": '#0066CC',
-  'Progressive Alliance of Socialists and Democrats': '#E02027',
-  'Renew Europe': '#FFD700',
-  'Greens/European Free Alliance': '#009E47',
-  'European Conservatives and Reformists': '#0099CC',
-  'The Left in the European Parliament': '#8B0000',
-  'Patriots for Europe': '#1a3a5c',
-  'Europe of Sovereign Nations': '#5c3d2e',
-  'Non-attached Members': '#999999'
+  'The Left group in the European Parliament - GUE/NGL': '#8B0000',
+  'Group of the Greens/European Free Alliance': '#009E47',
+  'Group of the Progressive Alliance of Socialists and Democrats in the European Parliament': '#E02027',
+  'Renew Europe Group': '#FFD700',
+  'Group of the European People\'s Party (Christian Democrats)': '#3399FF',
+  'European Conservatives and Reformists Group': '#5BC0DE',
+  'Patriots for Europe Group': '#002244',
+  'Europe of Sovereign Nations Group': '#800080',
+  'Non-attached Members': '#808080'
 };
+
+// Simple PCA implementation (same as MEPPCAPlot)
+function computePCA(data, numComponents = 2) {
+  const n = data.length;
+  if (n === 0) return { projections: [], variance: [] };
+  
+  const m = data[0].length;
+  
+  const means = new Array(m).fill(0);
+  for (let j = 0; j < m; j++) {
+    for (let i = 0; i < n; i++) {
+      means[j] += data[i][j];
+    }
+    means[j] /= n;
+  }
+  
+  const centered = data.map(row => row.map((val, j) => val - means[j]));
+  
+  const components = [];
+  const variances = [];
+  let currentData = centered.map(row => [...row]);
+  
+  for (let comp = 0; comp < numComponents; comp++) {
+    let pc = new Array(m).fill(1);
+    let norm = Math.sqrt(pc.reduce((sum, v) => sum + v * v, 0));
+    pc = pc.map(v => v / norm);
+    
+    for (let iter = 0; iter < 100; iter++) {
+      const xpc = currentData.map(row => row.reduce((sum, v, j) => sum + v * pc[j], 0));
+      const newPc = new Array(m).fill(0);
+      for (let j = 0; j < m; j++) {
+        for (let i = 0; i < n; i++) {
+          newPc[j] += currentData[i][j] * xpc[i];
+        }
+      }
+      
+      norm = Math.sqrt(newPc.reduce((sum, v) => sum + v * v, 0));
+      if (norm < 1e-10) break;
+      pc = newPc.map(v => v / norm);
+    }
+    
+    const sum = pc.reduce((a, b) => a + b, 0);
+    if (sum > 0) {
+      pc = pc.map(v => -v);
+    }
+    
+    components.push(pc);
+    
+    const projections = currentData.map(row => row.reduce((sum, v, j) => sum + v * pc[j], 0));
+    const variance = projections.reduce((sum, v) => sum + v * v, 0) / n;
+    variances.push(variance);
+    
+    for (let i = 0; i < n; i++) {
+      const proj = projections[i];
+      for (let j = 0; j < m; j++) {
+        currentData[i][j] -= proj * pc[j];
+      }
+    }
+  }
+  
+  const finalProjections = centered.map(row => 
+    components.map(pc => row.reduce((sum, v, j) => sum + v * pc[j], 0))
+  );
+  
+  return { projections: finalProjections, variance: variances, components };
+}
 
 export default function VAAUserPCA({ userPCA }) {
   const [mepData, setMepData] = useState(null);
@@ -29,11 +94,12 @@ export default function VAAUserPCA({ userPCA }) {
   async function fetchMEPData() {
     try {
       setLoading(true);
-      // Use pre-computed PCA coordinates - much faster!
-      const res = await axios.get('/api/stats/mep-pca-coords');
+      const res = await axios.get('/api/stats/mep-voting-vectors', {
+        params: { minVotes: 20 }
+      });
       setMepData(res.data);
     } catch (err) {
-      console.error('Error fetching MEP PCA data:', err);
+      console.error('Error fetching MEP voting data:', err);
     } finally {
       setLoading(false);
     }
@@ -42,14 +108,31 @@ export default function VAAUserPCA({ userPCA }) {
   const chartData = useMemo(() => {
     if (!mepData || !mepData.meps || !userPCA) return null;
 
-    // Use pre-computed coordinates directly
-    const mepPoints = mepData.meps.map(mep => ({
-      x: mep.x,
-      y: mep.y,
+    const { meps, billIds } = mepData;
+    
+    const billIdToIndex = {};
+    billIds.forEach((id, idx) => { billIdToIndex[id] = idx; });
+    
+    const matrix = meps.map(mep => {
+      const row = new Array(billIds.length).fill(0);
+      mep.votes.forEach(v => {
+        const idx = billIdToIndex[v.bill_id];
+        if (idx !== undefined) {
+          row[idx] = v.vote;
+        }
+      });
+      return row;
+    });
+    
+    const { projections } = computePCA(matrix, 2);
+    
+    const mepPoints = meps.map((mep, i) => ({
+      x: projections[i][0],
+      y: projections[i][1],
       type: 'mep',
-      name: mep.name,
-      group: mep.group,
-      color: GROUP_COLORS[mep.group] || '#808080'
+      name: mep.mep_name,
+      group: mep.mep_group,
+      color: GROUP_COLORS[mep.mep_group] || '#808080'
     }));
 
     // Add user point

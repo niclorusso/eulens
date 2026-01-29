@@ -48,3 +48,33 @@
 .pca-tooltip strong {
   color: var(--primary);
 }
+
+/* View Tabs */
+.pca-view-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.pca-tab {
+  padding: 0.5rem 1.5rem;
+  border: 2px solid #e2e8f0;
+  background: white;
+  border-radius: 0.375rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pca-tab:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.pca-tab.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}

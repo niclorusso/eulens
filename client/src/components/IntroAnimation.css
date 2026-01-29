@@ -1,0 +1,152 @@
+.intro-animation {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.intro-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  z-index: 2;
+  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lens-svg {
+  width: 120px;
+  height: 120px;
+  opacity: 0;
+  transform: scale(0.5) rotate(-20deg);
+  animation: lensAppear 0.6s ease-out 0.2s forwards;
+}
+
+@keyframes lensAppear {
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.lens-ring {
+  stroke-dasharray: 440;
+  stroke-dashoffset: 440;
+  animation: drawRing 0.8s ease-out 0.3s forwards;
+}
+
+@keyframes drawRing {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.lens-reflection {
+  opacity: 0;
+  animation: reflectionShine 0.5s ease-out 0.7s forwards;
+}
+
+@keyframes reflectionShine {
+  to {
+    opacity: 1;
+  }
+}
+
+.lens-glass {
+  opacity: 0;
+  animation: glassFill 0.4s ease-out 0.5s forwards;
+}
+
+@keyframes glassFill {
+  to {
+    opacity: 1;
+  }
+}
+
+.intro-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: brandAppear 0.5s ease-out 0.6s forwards;
+}
+
+@keyframes brandAppear {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.intro-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: white;
+  letter-spacing: -0.02em;
+}
+
+.intro-tagline {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 400;
+}
+
+/* Zoom circle - expands from lens center */
+.zoom-circle {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(248,250,252,1) 100%);
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0);
+}
+
+/* Zoom phase */
+.intro-animation.zoom .intro-content {
+  transform: scale(0.8);
+  opacity: 0;
+}
+
+.intro-animation.zoom .zoom-circle {
+  animation: zoomExpand 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes zoomExpand {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  10% {
+    opacity: 1;
+    transform: scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(50);
+  }
+}
+
+/* Fade out */
+.intro-animation.done {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease-out;
+}
+
+/* Reduce motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .intro-animation {
+    display: none;
+  }
+}

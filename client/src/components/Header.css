@@ -14,12 +14,25 @@
 
 .logo {
   flex: 1;
+  text-decoration: none;
 }
 
 .logo h1 {
   font-size: 2rem;
   margin: 0;
   color: white;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.logo-lens {
+  filter: drop-shadow(0 0 3px rgba(255,255,255,0.5));
+  transition: transform 0.3s ease;
+}
+
+.logo:hover .logo-lens {
+  transform: scale(1.1) rotate(-10deg);
 }
 
 .tagline {
@@ -47,6 +60,17 @@
 .nav-link:hover {
   opacity: 0.9;
   border-bottom-color: rgba(255, 255, 255, 0.5);
+}
+
+.nav-link.nav-highlight {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  border-bottom: none;
+}
+
+.nav-link.nav-highlight:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 @media (max-width: 768px) {

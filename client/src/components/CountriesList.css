@@ -1,0 +1,150 @@
+.countries-list-page {
+  max-width: 100%;
+}
+
+.countries-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.country-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.country-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.country-header {
+  padding: 1.5rem;
+  background: linear-gradient(135deg, var(--primary) 0%, #004080 100%);
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.country-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  color: white;
+}
+
+.country-code {
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 0.25rem;
+  letter-spacing: 1px;
+}
+
+.country-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  padding: 1.5rem;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.country-stats .stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.country-stats .stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 0.25rem;
+}
+
+.country-stats .stat-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.country-votes {
+  padding: 1rem 1.5rem 1.5rem;
+}
+
+.country-votes .vote-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.country-votes .vote-bar {
+  display: flex;
+  height: 24px;
+  border-radius: 0.25rem;
+  overflow: hidden;
+  background: #e2e8f0;
+}
+
+.country-votes .vote-segment {
+  height: 100%;
+  transition: width 0.3s;
+}
+
+.country-votes .vote-segment.yes {
+  background: #4ade80;
+}
+
+.country-votes .vote-segment.no {
+  background: #ef4444;
+}
+
+.country-votes .vote-segment.abstain {
+  background: #f59e0b;
+}
+
+.country-votes .vote-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.country-votes .vote-labels span {
+  font-weight: 500;
+}
+
+.country-votes .vote-labels .yes {
+  color: #16a34a;
+}
+
+.country-votes .vote-labels .no {
+  color: #dc2626;
+}
+
+.country-votes .vote-labels .abstain {
+  color: #d97706;
+}
+
+@media (max-width: 768px) {
+  .countries-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .country-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    padding: 1rem;
+  }
+
+  .country-stats .stat-value {
+    font-size: 1.25rem;
+  }
+}

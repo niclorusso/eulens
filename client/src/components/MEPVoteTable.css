@@ -1,0 +1,205 @@
+.mep-vote-table {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.table-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.search-box {
+  flex: 1;
+  min-width: 200px;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+.search-box input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.filters {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.filters select {
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  font-size: 0.9rem;
+  cursor: pointer;
+  min-width: 140px;
+}
+
+.filters select:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+.table-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+}
+
+.count-badge {
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.count-badge.yes {
+  background: rgba(74, 222, 128, 0.15);
+  color: #16a34a;
+}
+
+.count-badge.no {
+  background: rgba(239, 68, 68, 0.15);
+  color: #dc2626;
+}
+
+.count-badge.abstain {
+  background: rgba(245, 158, 11, 0.15);
+  color: #d97706;
+}
+
+.total-count {
+  color: #64748b;
+  font-size: 0.85rem;
+  margin-left: auto;
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+.mep-vote-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.mep-vote-table th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.mep-vote-table th:hover {
+  background: #f1f5f9;
+}
+
+.sort-icon {
+  margin-left: 0.5rem;
+  opacity: 0.5;
+  font-size: 0.8rem;
+}
+
+.mep-vote-table td {
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.mep-vote-table tr:hover {
+  background: #f8fafc;
+}
+
+.mep-name {
+  font-weight: 500;
+}
+
+.mep-link {
+  color: var(--dark);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.mep-link:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.mep-group {
+  font-size: 0.85rem;
+  color: #64748b;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vote-badge {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.vote-badge.yes {
+  background: #4ade80;
+  color: white;
+}
+
+.vote-badge.no {
+  background: #ef4444;
+  color: white;
+}
+
+.vote-badge.abstain {
+  background: #f59e0b;
+  color: white;
+}
+
+.table-footer {
+  padding: 1rem;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.85rem;
+  background: #f8fafc;
+  border-radius: 0 0 8px 8px;
+}
+
+@media (max-width: 768px) {
+  .table-controls {
+    flex-direction: column;
+  }
+
+  .filters {
+    width: 100%;
+  }
+
+  .filters select {
+    flex: 1;
+  }
+
+  .mep-group {
+    max-width: 120px;
+  }
+}

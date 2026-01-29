@@ -9,19 +9,27 @@
     "server:dev": "nodemon server/index.js",
     "client:dev": "cd client && npm run dev",
     "build": "cd client && npm run build",
-    "scrape": "node scripts/scrapeEUParliament.js"
+    "scrape": "node scripts/scrapeEUParliament.js",
+    "update-data": "node scripts/updateData.js",
+    "migrate:summaries": "node scripts/migrateBillSummaries.js",
+    "summarize": "node scripts/generateBillSummaries.js",
+    "generate-vaa": "node scripts/generateVAAQuestions.js",
+    "order-vaa": "node scripts/calculateBillPCALoadings.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
-    "pg": "^8.11.2",
+    "@google/generative-ai": "^0.21.0",
     "axios": "^1.6.2",
-    "xml2js": "^0.6.2",
-    "body-parser": "^1.20.2"
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "csv-parse": "^6.1.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "node-cron": "^3.0.3",
+    "pg": "^8.11.2",
+    "xml2js": "^0.6.2"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1",
-    "concurrently": "^8.2.1"
+    "concurrently": "^8.2.1",
+    "nodemon": "^3.0.1"
   }
 }

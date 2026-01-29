@@ -101,6 +101,11 @@
   color: #3b82f6;
 }
 
+.status-rejected {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+}
+
 .category-badge {
   padding: 0.25rem 0.75rem;
   background: rgba(102, 126, 234, 0.1);
@@ -145,6 +150,66 @@
   font-size: 1.25rem;
 }
 
+/* Bills info */
+.bills-info {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.pagination-pages {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.pagination-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border);
+  background: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #475569;
+  transition: all 0.2s;
+  min-width: 40px;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: #f8fafc;
+}
+
+.pagination-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination-ellipsis {
+  padding: 0 0.5rem;
+  color: #94a3b8;
+}
+
 @media (max-width: 768px) {
   .bills-grid {
     grid-template-columns: 1fr;
@@ -152,5 +217,15 @@
 
   .bills-header h2 {
     font-size: 1.75rem;
+  }
+
+  .pagination {
+    gap: 0.25rem;
+  }
+
+  .pagination-btn {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+    min-width: 35px;
   }
 }

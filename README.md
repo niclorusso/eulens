@@ -1,6 +1,6 @@
-# Agora EU - European Democracy Platform
+# EULens - See European Democracy Clearly
 
-A digital platform for EU representation and unity. Track, analyze, and discuss current European legislative decisions across all 27 member states.
+A digital platform for EU representation and transparency. Track, analyze, and understand European Parliament voting patterns across all 27 member states.
 
 ## Vision
 
@@ -14,28 +14,41 @@ Agora EU transforms the EU's legislative process from opaque to transparent, emp
 
 ## Features
 
-### 1. EU Issue Tracking
+### 1. Voting Transparency
 - Real-time tracking of EU Parliament votes and legislation
 - Categorized by policy area (Digital, Environment, Economy, etc.)
-- Voting status and adoption tracking
+- Detailed bill summaries with AI-generated explanations
 - Direct links to official EU sources
 
-### 2. Cross-Border Deliberation
-- Discuss issues with other Europeans
-- Filter perspectives by country
-- Anonymous, respectful discourse
-- Built-in machine translation (planned)
+### 2. MEP Profiles & Analytics
+- Individual MEP voting records and statistics
+- Voting patterns by political group and country
+- Similar MEP finder based on voting agreement
+- PCA (Principal Component Analysis) visualization of voting patterns
 
-### 3. Voting Analytics
-- Visual breakdown of how each country voted
-- Interactive charts and heatmaps
-- "Where Europe Agrees" consensus finder
-- Country-by-country voting patterns
+### 3. Political Compass
+- Interactive 2D and 3D PCA maps showing MEP voting positions
+- Group-level visualizations with standard deviation
+- Axis interpretation with top influencing bills
+- Color-coded by political groups
 
-### 4. MEP Accountability Dashboard (Coming Soon)
-- Track individual MEP voting records
-- Direct constituent feedback
-- Performance metrics by country/political group
+### 4. Voting Advice Application (VAA)
+- Answer questions based on real EU Parliament votes
+- Find your MEP match based on voting alignment
+- Filter matches by country
+- Questions ordered by political significance (PCA loadings)
+
+### 5. Chat with MEP
+- AI-powered conversations with MEP personas
+- Each political group represented by an average position
+- Ask about voting decisions and political stances
+- Interactive chat interface
+
+### 6. Statistics & Analytics
+- Legislative statistics by policy area
+- Country-level voting breakdowns
+- Group-level voting patterns
+- Agreement matrices between parties
 
 ## Tech Stack
 
@@ -48,11 +61,19 @@ Agora EU transforms the EU's legislative process from opaque to transparent, emp
 **Backend:**
 - Node.js + Express
 - PostgreSQL
-- Axios (HTTP client)
+- Google Gemini AI (for bill summaries and chat)
+
+**Frontend:**
+- React 18
+- Vite
+- Recharts (visualizations)
+- React Router (navigation)
+- Plotly.js (3D PCA visualizations)
 
 **Data:**
-- EU Parliament public API
-- Custom scraper for vote data
+- HowTheyVote.eu API
+- Custom scraper for EU Parliament votes
+- 10th legislature data (July 2024 onwards)
 
 ## Installation
 
@@ -78,8 +99,12 @@ psql agora_eu < server/schema.sql
 3. **Create environment file**
 ```bash
 cp .env.example .env
-# Edit .env with your database connection string
+# Edit .env with your database connection string and API keys
 ```
+
+Required environment variables:
+- `DATABASE_URL`: PostgreSQL connection string
+- `GEMINI_API_KEY`: Google Gemini API key (for AI features)
 
 4. **Install dependencies**
 ```bash
@@ -92,14 +117,22 @@ cd client && npm install && cd ..
 npm run scrape
 ```
 
-6. **Start development servers**
+6. **Generate bill summaries and VAA questions** (optional, for AI features)
+```bash
+npm run migrate:summaries
+npm run summarize
+npm run generate-vaa
+npm run order-vaa
+```
+
+7. **Start development servers**
 ```bash
 npm run dev
 ```
 
 This starts:
-- Backend API on http://localhost:5000
-- Frontend on http://localhost:3000
+- Backend API on http://localhost:5001
+- Frontend on http://localhost:5173 (Vite default)
 
 ## Project Structure
 
@@ -135,9 +168,9 @@ agora-eu/
 
 ## Data Sources
 
-- **EU Parliament**: Official voting data (libre.europa.eu API)
-- **EU Legislation**: Consolidated legislative data
-- **Member States**: Country-specific voting patterns
+- **HowTheyVote.eu**: EU Parliament voting data API
+- **EU Parliament**: Official legislative data
+- **10th Legislature**: Data from July 2024 onwards
 
 ## Contributing
 

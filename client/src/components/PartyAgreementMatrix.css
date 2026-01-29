@@ -1,0 +1,135 @@
+.agreement-matrix-container {
+  overflow-x: auto;
+}
+
+.matrix-wrapper {
+  min-width: 600px;
+}
+
+.agreement-matrix {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.agreement-matrix th,
+.agreement-matrix td {
+  padding: 0.75rem;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+}
+
+.agreement-matrix .corner {
+  background: white;
+  border-color: white;
+}
+
+.agreement-matrix .group-header {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #475569;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  height: 80px;
+  padding: 0.5rem;
+}
+
+.agreement-matrix .row-header {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #475569;
+  font-size: 0.8rem;
+  text-align: right;
+  padding-right: 0.75rem;
+  white-space: nowrap;
+}
+
+.matrix-cell {
+  min-width: 60px;
+  transition: all 0.2s;
+}
+
+.matrix-cell:hover:not(.diagonal) {
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+  position: relative;
+}
+
+.matrix-cell.diagonal {
+  background: #f1f5f9;
+}
+
+.diagonal-marker {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.cell-value {
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.no-data {
+  color: #cbd5e1;
+}
+
+/* Legend */
+.matrix-legend {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+}
+
+.legend-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #475569;
+}
+
+.legend-scale {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.legend-item {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  color: white;
+  font-weight: 500;
+}
+
+.matrix-empty {
+  padding: 3rem;
+  text-align: center;
+  color: #94a3b8;
+  background: #f8fafc;
+  border-radius: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .agreement-matrix th,
+  .agreement-matrix td {
+    padding: 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .agreement-matrix .group-header {
+    height: 60px;
+  }
+
+  .matrix-cell {
+    min-width: 45px;
+  }
+
+  .legend-scale {
+    flex-wrap: wrap;
+  }
+}

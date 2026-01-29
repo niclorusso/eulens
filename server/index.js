@@ -1901,12 +1901,25 @@ Recent topics in the European Parliament include: ${recentVotes.rows.map(v => v.
       systemInstruction: systemPrompt
     });
     
-    // Build chat history for Gemini (it uses a different format)
+    // Filter and format history for Gemini
+    // Gemini requires history to start with a user message, so we need to handle this
+    let formattedHistory = [];
+    
+    if (history && history.length > 0) {
+      // Find the first user message index
+      const firstUserIdx = history.findIndex(msg => msg.role === 'user');
+      
+      if (firstUserIdx >= 0) {
+        // Only include history starting from the first user message
+        formattedHistory = history.slice(firstUserIdx).map(msg => ({
+          role: msg.role === 'user' ? 'user' : 'model',
+          parts: [{ text: msg.content }]
+        }));
+      }
+    }
+    
     const chat = model.startChat({
-      history: history.map(msg => ({
-        role: msg.role === 'user' ? 'user' : 'model',
-        parts: [{ text: msg.content }]
-      }))
+      history: formattedHistory
     });
 
     const result = await chat.sendMessage(message);

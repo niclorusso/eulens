@@ -12,6 +12,8 @@ const GROUP_SHORT_NAMES = {
   'European Conservatives and Reformists Group': 'ECR',
   'Patriots for Europe Group': 'PfE',
   'Europe of Sovereign Nations Group': 'ESN',
+  'Identity and Democracy': 'ID',
+  'Identity and Democracy Group': 'ID',
   'Non-attached Members': 'NI'
 };
 
@@ -29,9 +31,11 @@ function getShortName(name) {
   if (lower.includes('conservative') || lower.includes('ecr')) return 'ECR';
   if (lower.includes('patriot')) return 'PfE';
   if (lower.includes('sovereign') || lower.includes('esn')) return 'ESN';
+  if (lower.includes('identity') && lower.includes('democracy')) return 'ID';
   if (lower.includes('non-attached') || lower.includes('ni')) return 'NI';
 
-  return name.substring(0, 10);
+  // Fallback: return full name if short
+  return name.length > 15 ? name.substring(0, 15) + '...' : name;
 }
 
 // Political group order (left to right)
@@ -44,6 +48,7 @@ const GROUP_ORDER = [
   'ECR',
   'PfE',
   'ESN',
+  'ID',
   'NI'
 ];
 

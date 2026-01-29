@@ -242,7 +242,7 @@ export default function VAAUserPCA({ userPCA }) {
                 <Cell key={`cell-${index}`} fill={entry.color} />
               ))}
             </Scatter>
-            {/* User point - larger and red with custom shape */}
+            {/* User point - larger red circle */}
             <Scatter 
               name="You" 
               data={[userPoint]} 
@@ -251,8 +251,8 @@ export default function VAAUserPCA({ userPCA }) {
                 const { cx, cy } = props;
                 return (
                   <g>
-                    <circle cx={cx} cy={cy} r={8} fill="#FF0000" stroke="#FFFFFF" strokeWidth={2} />
-                    <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle" fill="#FFFFFF" fontSize="10" fontWeight="bold">YOU</text>
+                    <circle cx={cx} cy={cy} r={10} fill="#FF0000" stroke="#FFFFFF" strokeWidth={3} opacity={0.9} />
+                    <circle cx={cx} cy={cy} r={6} fill="#FFFFFF" />
                   </g>
                 );
               }}

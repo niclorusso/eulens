@@ -190,7 +190,7 @@ async function precomputeMEPPCA() {
   });
   
   // Compute PCA
-  const { projections, variance, components } = computePCA(matrix, 3);
+  const { projections, variance, components, means } = computePCA(matrix, 3);
   
   // Save coordinates
   const totalVariance = variance.reduce((a, b) => a + b, 0);

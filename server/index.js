@@ -1642,73 +1642,12 @@ app.post('/api/vaa/submit', async (req, res) => {
       .map(([group, data]) => ({ group, match_percent: Math.round(data.total / data.count), mep_count: data.count }))
       .sort((a, b) => b.match_percent - a.match_percent);
 
-    // Calculate user's PCA position using pre-computed components
-    // IMPORTANT: Only use bills the user actually answered (not all bills)
-    let userPCA = null;
-    try {
-      // Get pre-computed PCA components from metadata
-      const pcaMetaRes = await pool.query(`
-        SELECT value FROM metadata WHERE key = 'pca_components'
-      `);
-      
-      if (pcaMetaRes.rows.length > 0) {
-        const { components, means, billIds: allBillIds } = JSON.parse(pcaMetaRes.rows[0].value);
-        
-        if (components && components.length >= 2 && means && allBillIds) {
-          // Build index map for bill IDs
-          const billIdToIdx = {};
-          allBillIds.forEach((id, idx) => { billIdToIdx[id] = idx; });
-          
-          // Only use bills the user actually answered (agree/disagree, not skip/neutral)
-          let x = 0, y = 0;
-          let answeredCount = 0;
-          
-          for (const billId in responseMap) {
-            const response = responseMap[billId];
-            // Skip if user didn't give a definitive answer
-            if (!response || response.answer === 'skip' || response.answer === 'neutral') continue;
-            
-            const idx = billIdToIdx[parseInt(billId)];
-            if (idx === undefined) continue; // Bill not in PCA data
-            
-            // Convert user answer to vote value (same as MEP encoding)
-            const userVote = response.answer === 'agree' ? 1 : -1;
-            
-            // Center using the mean for this bill (from MEP data)
-            const centered = userVote - means[idx];
-            
-            // Add contribution to each PC
-            x += centered * components[0][idx];
-            y += centered * components[1][idx];
-            answeredCount++;
-          }
-          
-          // Scale projection to be comparable to MEP projections
-          // MEPs are projected using all bills; user only answered some
-          // Scale factor accounts for the reduced number of dimensions
-          if (answeredCount > 0) {
-            const scaleFactor = allBillIds.length / answeredCount;
-            userPCA = { 
-              x: x * scaleFactor, 
-              y: y * scaleFactor,
-              answeredBills: answeredCount,
-              totalBills: allBillIds.length
-            };
-          }
-        }
-      }
-    } catch (pcaError) {
-      console.error('Error calculating user PCA:', pcaError);
-      // Don't fail the whole request if PCA fails
-    }
-
     res.json({ 
       sessionId: session, 
       topMatches, 
       partyMatches, 
       totalMepsCompared: matches.length,
-      countryFilter: countryCode || null,
-      userPCA // Add user's PCA position
+      countryFilter: countryCode || null
     });
   } catch (error) {
     console.error('Error processing VAA submission:', error);

@@ -347,10 +347,10 @@ export default function VAA() {
             </div>
           </section>
 
-          {/* User PCA Position */}
-          {results.userPCA && (
+          {/* Political Map with Top Matches */}
+          {results.topMatches && results.topMatches.length > 0 && (
             <section className="results-section card">
-              <VAAUserPCA userPCA={results.userPCA} />
+              <VAAUserPCA topMatches={results.topMatches} />
             </section>
           )}
 

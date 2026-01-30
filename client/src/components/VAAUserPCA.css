@@ -19,6 +19,11 @@
   line-height: 1.6;
 }
 
+.pca-answered-info {
+  color: #3b82f6;
+  font-weight: 500;
+}
+
 .pca-chart-wrapper {
   width: 100%;
   max-width: 600px;

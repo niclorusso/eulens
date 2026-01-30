@@ -1643,6 +1643,7 @@ app.post('/api/vaa/submit', async (req, res) => {
       .sort((a, b) => b.match_percent - a.match_percent);
 
     // Calculate user's PCA position using pre-computed components
+    // IMPORTANT: Only use bills the user actually answered (not all bills)
     let userPCA = null;
     try {
       // Get pre-computed PCA components from metadata
@@ -1654,21 +1655,46 @@ app.post('/api/vaa/submit', async (req, res) => {
         const { components, means, billIds: allBillIds } = JSON.parse(pcaMetaRes.rows[0].value);
         
         if (components && components.length >= 2 && means && allBillIds) {
-          // Build user's voting vector (same format: yes=1, no=-1, neutral/skip=0)
-          const userVector = allBillIds.map(billId => {
+          // Build index map for bill IDs
+          const billIdToIdx = {};
+          allBillIds.forEach((id, idx) => { billIdToIdx[id] = idx; });
+          
+          // Only use bills the user actually answered (agree/disagree, not skip/neutral)
+          let x = 0, y = 0;
+          let answeredCount = 0;
+          
+          for (const billId in responseMap) {
             const response = responseMap[billId];
-            if (!response || response.answer === 'skip' || response.answer === 'neutral') return 0;
-            return response.answer === 'agree' ? 1 : -1;
-          });
+            // Skip if user didn't give a definitive answer
+            if (!response || response.answer === 'skip' || response.answer === 'neutral') continue;
+            
+            const idx = billIdToIdx[parseInt(billId)];
+            if (idx === undefined) continue; // Bill not in PCA data
+            
+            // Convert user answer to vote value (same as MEP encoding)
+            const userVote = response.answer === 'agree' ? 1 : -1;
+            
+            // Center using the mean for this bill (from MEP data)
+            const centered = userVote - means[idx];
+            
+            // Add contribution to each PC
+            x += centered * components[0][idx];
+            y += centered * components[1][idx];
+            answeredCount++;
+          }
           
-          // Center user vector using same means as MEPs
-          const centeredUser = userVector.map((v, i) => v - means[i]);
-          
-          // Project onto first two principal components
-          const x = centeredUser.reduce((sum, v, i) => sum + v * components[0][i], 0);
-          const y = centeredUser.reduce((sum, v, i) => sum + v * components[1][i], 0);
-          
-          userPCA = { x, y };
+          // Scale projection to be comparable to MEP projections
+          // MEPs are projected using all bills; user only answered some
+          // Scale factor accounts for the reduced number of dimensions
+          if (answeredCount > 0) {
+            const scaleFactor = allBillIds.length / answeredCount;
+            userPCA = { 
+              x: x * scaleFactor, 
+              y: y * scaleFactor,
+              answeredBills: answeredCount,
+              totalBills: allBillIds.length
+            };
+          }
         }
       }
     } catch (pcaError) {

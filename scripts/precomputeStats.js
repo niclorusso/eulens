@@ -233,14 +233,28 @@ async function precomputeMEPPCA() {
   `, [JSON.stringify({ components, means, billIds })]);
   
   // Save bill loadings for interpretation
+  // We need to save enough bills so frontend can display 3 positive and 3 negative per axis
   const topBillsPerAxis = [];
   for (let axis = 0; axis < 3; axis++) {
     const loadings = components[axis].map((loading, idx) => ({
       billId: billIds[idx],
       loading
     }));
-    loadings.sort((a, b) => Math.abs(b.loading) - Math.abs(a.loading));
-    topBillsPerAxis.push(loadings.slice(0, 5));
+    
+    // Get top 5 positive loadings (highest first)
+    const positive = loadings
+      .filter(l => l.loading > 0)
+      .sort((a, b) => b.loading - a.loading)
+      .slice(0, 5);
+    
+    // Get top 5 negative loadings (most negative first)
+    const negative = loadings
+      .filter(l => l.loading < 0)
+      .sort((a, b) => a.loading - b.loading)
+      .slice(0, 5);
+    
+    // Combine and keep the format expected by frontend (both positive and negative in one array)
+    topBillsPerAxis.push([...positive, ...negative]);
   }
   
   await pool.query(`
@@ -345,7 +359,7 @@ async function precomputePartyCohesion() {
     )
     SELECT 
       party,
-      ROUND(AVG(cohesion) * 100, 1) as avg_cohesion,
+      ROUND((AVG(cohesion) * 100)::numeric, 1) as avg_cohesion,
       COUNT(DISTINCT bill_id) as bills_voted
     FROM cohesion_per_bill
     GROUP BY party

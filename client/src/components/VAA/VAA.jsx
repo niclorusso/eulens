@@ -369,10 +369,10 @@ export default function VAA() {
 
           {/* Actions */}
           <div className="results-actions">
-            <button className="btn-secondary" onClick={restart}>
+            <button className="btn-secondary btn-action" onClick={restart}>
               Take Quiz Again
             </button>
-            <Link to="/" className="btn-primary">
+            <Link to="/" className="btn-secondary btn-action">
               Explore Issues
             </Link>
           </div>

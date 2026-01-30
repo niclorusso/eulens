@@ -1,85 +1,30 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import './VAAUserPCA.css';
 
+// Political group colors - matching the names returned by the API
 const GROUP_COLORS = {
+  // Full names (as stored in database)
+  "European People's Party": '#0066CC',
+  'Progressive Alliance of Socialists and Democrats': '#E02027',
+  'Renew Europe': '#FFD700',
+  'Greens/European Free Alliance': '#009E47',
+  'European Conservatives and Reformists': '#0099CC',
+  'The Left in the European Parliament': '#8B0000',
+  'Patriots for Europe': '#1a3a5c',
+  'Europe of Sovereign Nations': '#5c3d2e',
+  'Non-attached Members': '#808080',
+  // Alternative/legacy names
   'The Left group in the European Parliament - GUE/NGL': '#8B0000',
   'Group of the Greens/European Free Alliance': '#009E47',
   'Group of the Progressive Alliance of Socialists and Democrats in the European Parliament': '#E02027',
   'Renew Europe Group': '#FFD700',
-  'Group of the European People\'s Party (Christian Democrats)': '#3399FF',
-  'European Conservatives and Reformists Group': '#5BC0DE',
-  'Patriots for Europe Group': '#002244',
-  'Europe of Sovereign Nations Group': '#800080',
-  'Non-attached Members': '#808080'
+  "Group of the European People's Party (Christian Democrats)": '#0066CC',
+  'European Conservatives and Reformists Group': '#0099CC',
+  'Patriots for Europe Group': '#1a3a5c',
+  'Europe of Sovereign Nations Group': '#5c3d2e'
 };
-
-// Simple PCA implementation (same as MEPPCAPlot)
-function computePCA(data, numComponents = 2) {
-  const n = data.length;
-  if (n === 0) return { projections: [], variance: [] };
-  
-  const m = data[0].length;
-  
-  const means = new Array(m).fill(0);
-  for (let j = 0; j < m; j++) {
-    for (let i = 0; i < n; i++) {
-      means[j] += data[i][j];
-    }
-    means[j] /= n;
-  }
-  
-  const centered = data.map(row => row.map((val, j) => val - means[j]));
-  
-  const components = [];
-  const variances = [];
-  let currentData = centered.map(row => [...row]);
-  
-  for (let comp = 0; comp < numComponents; comp++) {
-    let pc = new Array(m).fill(1);
-    let norm = Math.sqrt(pc.reduce((sum, v) => sum + v * v, 0));
-    pc = pc.map(v => v / norm);
-    
-    for (let iter = 0; iter < 100; iter++) {
-      const xpc = currentData.map(row => row.reduce((sum, v, j) => sum + v * pc[j], 0));
-      const newPc = new Array(m).fill(0);
-      for (let j = 0; j < m; j++) {
-        for (let i = 0; i < n; i++) {
-          newPc[j] += currentData[i][j] * xpc[i];
-        }
-      }
-      
-      norm = Math.sqrt(newPc.reduce((sum, v) => sum + v * v, 0));
-      if (norm < 1e-10) break;
-      pc = newPc.map(v => v / norm);
-    }
-    
-    const sum = pc.reduce((a, b) => a + b, 0);
-    if (sum > 0) {
-      pc = pc.map(v => -v);
-    }
-    
-    components.push(pc);
-    
-    const projections = currentData.map(row => row.reduce((sum, v, j) => sum + v * pc[j], 0));
-    const variance = projections.reduce((sum, v) => sum + v * v, 0) / n;
-    variances.push(variance);
-    
-    for (let i = 0; i < n; i++) {
-      const proj = projections[i];
-      for (let j = 0; j < m; j++) {
-        currentData[i][j] -= proj * pc[j];
-      }
-    }
-  }
-  
-  const finalProjections = centered.map(row => 
-    components.map(pc => row.reduce((sum, v, j) => sum + v * pc[j], 0))
-  );
-  
-  return { projections: finalProjections, variance: variances, components };
-}
 
 export default function VAAUserPCA({ userPCA }) {
   const [mepData, setMepData] = useState(null);
@@ -94,12 +39,11 @@ export default function VAAUserPCA({ userPCA }) {
   async function fetchMEPData() {
     try {
       setLoading(true);
-      const res = await axios.get('/api/stats/mep-voting-vectors', {
-        params: { minVotes: 20 }
-      });
+      // Use pre-computed PCA coordinates instead of computing on the fly
+      const res = await axios.get('/api/stats/mep-pca-coords');
       setMepData(res.data);
     } catch (err) {
-      console.error('Error fetching MEP voting data:', err);
+      console.error('Error fetching MEP PCA data:', err);
     } finally {
       setLoading(false);
     }
@@ -108,34 +52,19 @@ export default function VAAUserPCA({ userPCA }) {
   const chartData = useMemo(() => {
     if (!mepData || !mepData.meps || !userPCA) return null;
 
-    const { meps, billIds } = mepData;
-    
-    const billIdToIndex = {};
-    billIds.forEach((id, idx) => { billIdToIndex[id] = idx; });
-    
-    const matrix = meps.map(mep => {
-      const row = new Array(billIds.length).fill(0);
-      mep.votes.forEach(v => {
-        const idx = billIdToIndex[v.bill_id];
-        if (idx !== undefined) {
-          row[idx] = v.vote;
-        }
-      });
-      return row;
-    });
-    
-    const { projections } = computePCA(matrix, 2);
-    
-    const mepPoints = meps.map((mep, i) => ({
-      x: projections[i][0],
-      y: projections[i][1],
+    const { meps } = mepData;
+
+    // MEP points already have pre-computed x, y coordinates
+    const mepPoints = meps.map(mep => ({
+      x: mep.x,
+      y: mep.y,
       type: 'mep',
-      name: mep.mep_name,
-      group: mep.mep_group,
-      color: GROUP_COLORS[mep.mep_group] || '#808080'
+      name: mep.name,
+      group: mep.group,
+      color: GROUP_COLORS[mep.group] || '#808080'
     }));
 
-    // Add user point
+    // User point from backend (computed in same PCA space)
     const userPoint = {
       x: userPCA.x,
       y: userPCA.y,
@@ -196,9 +125,14 @@ export default function VAAUserPCA({ userPCA }) {
       <h3>Your Position on the Political Map</h3>
       <p className="pca-description">
         This map shows where you stand compared to MEPs based on your voting preferences.
-        Each dot represents an MEP, colored by their political group. Your position is marked with a red star.
+        Each dot represents an MEP, colored by their political group. Your position is marked with a red circle.
+        {userPCA.answeredBills && (
+          <span className="pca-answered-info">
+            {' '}(Based on your {userPCA.answeredBills} answered questions)
+          </span>
+        )}
       </p>
-      
+
       <div className="pca-chart-wrapper">
         <ResponsiveContainer width="100%" height={500} aspect={1}>
           <ScatterChart
@@ -236,16 +170,16 @@ export default function VAAUserPCA({ userPCA }) {
                 return null;
               }}
             />
-            {/* MEP points */}
-            <Scatter name="MEPs" data={mepPoints} fill="#8884d8">
+            {/* MEP points - colored by political group */}
+            <Scatter name="MEPs" data={mepPoints}>
               {mepPoints.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
+                <Cell key={`cell-${index}`} fill={entry.color} fillOpacity={0.7} />
               ))}
             </Scatter>
             {/* User point - larger red circle */}
-            <Scatter 
-              name="You" 
-              data={[userPoint]} 
+            <Scatter
+              name="You"
+              data={[userPoint]}
               fill="#FF0000"
               shape={(props) => {
                 const { cx, cy } = props;

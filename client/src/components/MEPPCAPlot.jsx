@@ -629,26 +629,28 @@ export default function MEPPCAPlot() {
                         style={{ width: `${Math.min(parseFloat(variance), 100)}%` }}
                       />
                     </div>
-                    {topBillsPerComponent[idx] && (
+                    {topBillsPerComponent[idx] && (topBillsPerComponent[idx].positive.length > 0 || topBillsPerComponent[idx].negative.length > 0) && (
                       <div className="pca-axis-bills">
                         <div className="pca-axis-direction">
                           <span className="direction-label">→ High values (voted YES on):</span>
                           <div className="direction-bills">
                             {topBillsPerComponent[idx].positive.slice(0, 3).map((b, i) => (
-                              <Link key={i} to={`/bills/${b.billId}`} className="bill-link">
-                                Bill #{b.billId}
+                              <Link key={i} to={`/bills/${b.billId}`} className="bill-link" title={b.title || `Bill #${b.billId}`}>
+                                {b.title ? (b.title.length > 60 ? b.title.slice(0, 60) + '…' : b.title) : `Bill #${b.billId}`}
                               </Link>
                             ))}
+                            {topBillsPerComponent[idx].positive.length === 0 && <span className="no-bills">No data</span>}
                           </div>
                         </div>
                         <div className="pca-axis-direction">
                           <span className="direction-label">← Low values (voted YES on):</span>
                           <div className="direction-bills">
                             {topBillsPerComponent[idx].negative.slice(0, 3).map((b, i) => (
-                              <Link key={i} to={`/bills/${b.billId}`} className="bill-link">
-                                Bill #{b.billId}
+                              <Link key={i} to={`/bills/${b.billId}`} className="bill-link" title={b.title || `Bill #${b.billId}`}>
+                                {b.title ? (b.title.length > 60 ? b.title.slice(0, 60) + '…' : b.title) : `Bill #${b.billId}`}
                               </Link>
                             ))}
+                            {topBillsPerComponent[idx].negative.length === 0 && <span className="no-bills">No data</span>}
                           </div>
                         </div>
                       </div>

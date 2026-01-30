@@ -93,6 +93,16 @@ async function precomputeAll() {
   const startTime = Date.now();
   
   try {
+    // Ensure metadata table exists
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS metadata (
+        key VARCHAR(255) PRIMARY KEY,
+        value TEXT,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('📋 Metadata table ready');
+    
     // 1. Pre-compute MEP PCA coordinates
     await precomputeMEPPCA();
     
@@ -478,10 +488,12 @@ async function precomputeGroupStats() {
 precomputeAll()
   .then(() => {
     console.log('\n🎉 Pre-computation finished successfully!');
+    pool.end();
     process.exit(0);
   })
   .catch(err => {
-    console.error('\n💥 Pre-computation failed:', err);
+    console.error('\n💥 Pre-computation failed:', err.message);
+    console.error('Stack:', err.stack);
+    pool.end();
     process.exit(1);
-  })
-  .finally(() => pool.end());
+  });

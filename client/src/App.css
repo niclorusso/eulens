@@ -2,6 +2,18 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  will-change: opacity, transform;
+}
+
+.app--under-intro {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.app--ready {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 main {
@@ -18,5 +30,11 @@ main {
 @media (max-width: 480px) {
   main {
     padding: 0.75rem 0 1.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app {
+    transition: none;
   }
 }

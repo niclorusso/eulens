@@ -28,7 +28,7 @@ export default function App() {
   return (
     <BrowserRouter>
       {showIntro && <IntroAnimation onComplete={handleIntroComplete} />}
-      <div className="app">
+      <div className={showIntro ? 'app app--under-intro' : 'app app--ready'}>
         <Header />
         <Routes>
           <Route path="/" element={<BillsList />} />

@@ -4,6 +4,7 @@
   "description": "EULens - See European Democracy Clearly",
   "main": "server/index.js",
   "type": "module",
+  "license": "MIT",
   "scripts": {
     "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
     "server:dev": "nodemon server/index.js",

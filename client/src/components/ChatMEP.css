@@ -364,7 +364,8 @@
   }
 
   .mep-selector {
-    max-height: 200px;
+    max-height: none;
+    padding: 0.75rem;
   }
 
   .mep-list {
@@ -379,6 +380,10 @@
     text-align: center;
     min-width: 100px;
     padding: 0.75rem 0.5rem;
+  }
+
+  .chat-disclaimer {
+    display: none;
   }
 
   .chat-header h1 {

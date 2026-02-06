@@ -6,6 +6,18 @@
 [build.environment]
   NODE_VERSION = "18"
 
+# Disable production builds to conserve credits.
+[context.production]
+  ignore = "echo 'Production deploys disabled; use Branch Deploys or Deploy Previews.' && exit 0"
+
+# Keep branch deploys enabled.
+[context.branch-deploy]
+  command = "npm install && npm run build"
+
+# Keep deploy previews enabled.
+[context.deploy-preview]
+  command = "npm install && npm run build"
+
 # API redirects - Proxy API calls to Render backend
 [[redirects]]
   from = "/api/*"

@@ -19,3 +19,14 @@ client/ios/App/App/capacitor.config.json
 client/ios/App/App/config.xml
 client/ios/capacitor-cordova-ios-plugins/
 .claude/
+
+# Prevent Claude-generated instruction files
+*_HERE.md
+QUICKSTART*.md
+SETUP*.md
+*SUMMARY*.md
+FEATURES*.md
+ARCHITECTURE*.md
+*FIX*.md
+*TRIGGER*.md
+*RUNNING*.md

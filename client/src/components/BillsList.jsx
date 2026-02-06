@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import './BillsList.css';
@@ -10,40 +10,67 @@ export default function BillsList() {
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({ totalPages: 1, totalBills: 0 });
   const [categories, setCategories] = useState(['all']);
+  const [loadingSeconds, setLoadingSeconds] = useState(0);
+  const timerRef = useRef(null);
+  const initialLoadDone = useRef(false);
 
+  // Fetch categories and first page of bills in parallel on mount
   useEffect(() => {
-    fetchCategories();
+    async function loadInitialData() {
+      setLoading(true);
+      try {
+        const [categoriesRes, billsRes] = await Promise.all([
+          axios.get('/api/stats/overview'),
+          axios.get('/api/bills', { params: { page: 1, limit: 20 } })
+        ]);
+
+        const cats = categoriesRes.data.byCategory?.map(c => c.category) || [];
+        setCategories(['all', ...cats]);
+        setBills(billsRes.data.bills || []);
+        setPagination(billsRes.data.pagination || { totalPages: 1, totalBills: 0 });
+      } catch (error) {
+        console.error('Error loading initial data:', error);
+      } finally {
+        setLoading(false);
+        initialLoadDone.current = true;
+      }
+    }
+    loadInitialData();
   }, []);
 
+  // Fetch bills on page/filter change (skip the initial load)
   useEffect(() => {
+    if (!initialLoadDone.current) return;
+    async function fetchBills() {
+      setLoading(true);
+      try {
+        const params = { page, limit: 20 };
+        if (filter !== 'all') params.category = filter;
+        const response = await axios.get('/api/bills', { params });
+        setBills(response.data.bills || []);
+        setPagination(response.data.pagination || { totalPages: 1, totalBills: 0 });
+      } catch (error) {
+        console.error('Error fetching bills:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
     fetchBills();
   }, [page, filter]);
 
-  async function fetchCategories() {
-    try {
-      const response = await axios.get('/api/stats/overview');
-      const cats = response.data.byCategory?.map(c => c.category) || [];
-      setCategories(['all', ...cats]);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
+  // Track elapsed seconds while loading for user feedback
+  useEffect(() => {
+    if (loading) {
+      setLoadingSeconds(0);
+      timerRef.current = setInterval(() => {
+        setLoadingSeconds(s => s + 1);
+      }, 1000);
+    } else {
+      clearInterval(timerRef.current);
+      setLoadingSeconds(0);
     }
-  }
-
-  async function fetchBills() {
-    try {
-      setLoading(true);
-      const params = { page, limit: 20 };
-      if (filter !== 'all') params.category = filter;
-      
-      const response = await axios.get('/api/bills', { params });
-      setBills(response.data.bills || []);
-      setPagination(response.data.pagination || { totalPages: 1, totalBills: 0 });
-    } catch (error) {
-      console.error('Error fetching bills:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
+    return () => clearInterval(timerRef.current);
+  }, [loading]);
 
   function handleFilterChange(cat) {
     setFilter(cat);
@@ -77,7 +104,13 @@ export default function BillsList() {
       {loading ? (
         <div className="loading">
           <div className="spinner"></div>
-          <p>Loading issues...</p>
+          {loadingSeconds < 5 && <p>Loading issues...</p>}
+          {loadingSeconds >= 5 && loadingSeconds < 15 && (
+            <p>Our server is waking up &mdash; this may take a moment on the first visit...</p>
+          )}
+          {loadingSeconds >= 15 && (
+            <p>Almost there! Connecting to the EU Parliament database...</p>
+          )}
         </div>
       ) : (
         <>

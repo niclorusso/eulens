@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import bodyParser from 'body-parser';
 import pg from 'pg';
 import dotenv from 'dotenv';
@@ -32,6 +33,13 @@ const pool = new Pool({
   max: 10,
   // Force IPv4 by using hostname resolution
   // Note: This requires using connection pooler for Supabase
+});
+
+// Eagerly establish DB connection so it's ready before the first request
+pool.query('SELECT 1').then(() => {
+  console.log('Database connection established');
+}).catch(err => {
+  console.error('Database connection failed:', err.message);
 });
 
 // Simple PCA computation function (same algorithm as frontend)
@@ -96,13 +104,22 @@ function computePCComponents(data, numComponents = 2) {
   return { components, means };
 }
 
+app.use(compression());
 app.use(cors());
 app.use(bodyParser.json());
+
+// Cache-control helper for semi-static data
+function cacheFor(seconds) {
+  return (req, res, next) => {
+    res.set('Cache-Control', `public, max-age=${seconds}, stale-while-revalidate=${seconds * 2}`);
+    next();
+  };
+}
 
 // BILLS ENDPOINTS
 
 // Get all bills with pagination
-app.get('/api/bills', async (req, res) => {
+app.get('/api/bills', cacheFor(300), async (req, res) => {
   try {
     const { page = 1, limit = 20, category } = req.query;
     const offset = (parseInt(page) - 1) * parseInt(limit);
@@ -151,7 +168,7 @@ app.get('/api/bills', async (req, res) => {
 });
 
 // Get single bill with voting breakdown
-app.get('/api/bills/:id', async (req, res) => {
+app.get('/api/bills/:id', cacheFor(600), async (req, res) => {
   try {
     const billId = req.params.id;
 
@@ -269,7 +286,7 @@ app.get('/api/bills/:id/discussions', async (req, res) => {
 
 // Get where Europe agrees (cross-country consensus)
 // Fixed: Now counts countries by their MAJORITY vote position, not any vote
-app.get('/api/consensus', async (req, res) => {
+app.get('/api/consensus', cacheFor(600), async (req, res) => {
   try {
     const result = await pool.query(
       `WITH country_votes AS (
@@ -402,7 +419,7 @@ app.get('/api/bills/:id/mep-votes', async (req, res) => {
 });
 
 // Get all MEPs (for reference)
-app.get('/api/meps', async (req, res) => {
+app.get('/api/meps', cacheFor(1800), async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT mep_id, name, first_name, last_name, country_code, political_group, photo_url
@@ -482,7 +499,7 @@ app.get('/api/meps/stats', async (req, res) => {
 });
 
 // Get all political groups with statistics
-app.get('/api/groups', async (req, res) => {
+app.get('/api/groups', cacheFor(1800), async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT 
@@ -548,7 +565,7 @@ const EU_ACCESSION_YEARS = {
   'SWE': 1995  // Sweden
 };
 
-app.get('/api/countries', async (req, res) => {
+app.get('/api/countries', cacheFor(1800), async (req, res) => {
   try {
     const result = await pool.query(`
       WITH country_stats AS (
@@ -792,7 +809,7 @@ app.get('/api/bills/:id/non-voters', async (req, res) => {
 // STATISTICS ENDPOINTS
 
 // Get legislature overview statistics
-app.get('/api/stats/overview', async (req, res) => {
+app.get('/api/stats/overview', cacheFor(600), async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT
@@ -852,7 +869,7 @@ app.get('/api/stats/overview', async (req, res) => {
 });
 
 // Get party agreement matrix (uses pre-computed data if available)
-app.get('/api/stats/party-agreement', async (req, res) => {
+app.get('/api/stats/party-agreement', cacheFor(3600), async (req, res) => {
   try {
     // Try pre-computed data first (much faster)
     const precomputedRes = await pool.query(`
@@ -1111,7 +1128,7 @@ app.get('/api/stats/mep-voting-vectors', async (req, res) => {
 });
 
 // Get pre-computed MEP PCA coordinates (FAST - no computation needed)
-app.get('/api/stats/mep-pca-coords', async (req, res) => {
+app.get('/api/stats/mep-pca-coords', cacheFor(3600), async (req, res) => {
   try {
     // Get MEPs with pre-computed PCA coordinates
     const mepsResult = await pool.query(`
@@ -1190,7 +1207,7 @@ app.get('/api/stats/precomputed', async (req, res) => {
 });
 
 // Get party cohesion stats (uses pre-computed data if available)
-app.get('/api/stats/party-cohesion', async (req, res) => {
+app.get('/api/stats/party-cohesion', cacheFor(3600), async (req, res) => {
   try {
     // Try pre-computed data first (much faster)
     const precomputedRes = await pool.query(`
@@ -1408,7 +1425,7 @@ app.get('/api/meps/:mepId/compass', async (req, res) => {
 });
 
 // Get all MEPs positioned for scatter plot
-app.get('/api/compass/data', async (req, res) => {
+app.get('/api/compass/data', cacheFor(3600), async (req, res) => {
   try {
     const result = await pool.query(`
       WITH mep_votes_on_tagged AS (
@@ -1510,7 +1527,7 @@ app.post('/api/admin/tag-vote', async (req, res) => {
 // VAA (VOTING ADVICE APPLICATION) ENDPOINTS
 
 // Get VAA questions
-app.get('/api/vaa/questions', async (req, res) => {
+app.get('/api/vaa/questions', cacheFor(1800), async (req, res) => {
   try {
     // Order by display_order (which should be set by PCA loading calculation)
     // If display_order is NULL or 0, order by id as fallback
@@ -1673,9 +1690,14 @@ app.post('/api/admin/vaa-question', async (req, res) => {
   }
 });
 
-// HEALTH CHECK
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok' });
+// HEALTH CHECK - also pings DB to keep connection pool warm
+app.get('/api/health', async (req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.json({ status: 'ok', db: 'connected' });
+  } catch (err) {
+    res.json({ status: 'ok', db: 'error' });
+  }
 });
 
 // ADMIN ENDPOINTS
@@ -1917,6 +1939,20 @@ app.listen(PORT, () => {
       schedule: process.env.UPDATE_SCHEDULE || '0 3 * * 0', // Default: Sundays at 3am
       runOnStart: process.env.UPDATE_ON_START === 'true'
     });
+  }
+
+  // Keep-alive self-ping to prevent Render free tier from sleeping
+  if (process.env.RENDER_EXTERNAL_URL) {
+    const KEEP_ALIVE_INTERVAL = 14 * 60 * 1000; // 14 minutes
+    setInterval(async () => {
+      try {
+        const res = await fetch(`${process.env.RENDER_EXTERNAL_URL}/api/health`);
+        console.log(`[Keep-alive] Pinged health: ${res.status}`);
+      } catch (err) {
+        console.error('[Keep-alive] Ping failed:', err.message);
+      }
+    }, KEEP_ALIVE_INTERVAL);
+    console.log('[Keep-alive] Self-ping enabled every 14 minutes');
   }
 });
 

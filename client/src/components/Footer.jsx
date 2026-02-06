@@ -48,6 +48,11 @@ export default function Footer() {
           <p className="footer-data">
             Data source: <a href="https://howtheyvote.eu" target="_blank" rel="noopener noreferrer">HowTheyVote.eu</a>
           </p>
+          <p className="footer-netlify">
+            <a href="https://www.netlify.com" target="_blank" rel="noopener noreferrer">
+              <img src="https://www.netlify.com/v3/img/components/netlify-color-accent.svg" alt="Deploys by Netlify" style={{height: '30px'}} />
+            </a>
+          </p>
         </div>
       </div>
     </footer>
